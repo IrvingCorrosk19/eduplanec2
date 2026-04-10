@@ -1,0 +1,68 @@
+# Archivos de Git
+.git
+.gitignore
+.gitattributes
+
+# Archivos de Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos de compilación
+SchoolManager/bin/
+SchoolManager/obj/
+SchoolManager/out/
+bin/
+obj/
+out/
+
+# Archivos de paquetes NuGet
+packages/
+*.nupkg
+
+# Archivos de logs
+logs/
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración local
+SchoolManager/appsettings.Development.json
+SchoolManager/appsettings.Local.json
+
+# Archivos de migraciones (se ejecutarán en runtime)
+SchoolManager/Migrations/
+
+# Archivos de documentación
+*.md
+README.md
+
+# Archivos de Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Archivos de CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Archivos de Node.js (si los hay)
+node_modules/
+npm-debug.log*
+
+# Archivos de uploads locales (se crearán en runtime)
+SchoolManager/wwwroot/uploads/
+
+# Archivos de base de datos
+SchoolManagement.sql
+cleanup_database.sql

@@ -1,0 +1,24 @@
+# Render Blueprint - EduplanerIIC
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: eduplaneriic
+    runtime: docker
+    dockerfilePath: ./SchoolManager/Dockerfile
+    dockerContext: ./SchoolManager
+    plan: free  # o starter, standard según plan
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false  # Pegar en Render: Internal Database URL o cadena Npgsql del Postgres
+      # Cloudinary (una sola vez en dashboard.cloudinary.com). Válido cualquiera de los dos formatos:
+      # - Cloudinary__CloudName / __ApiKey / __ApiSecret  (.NET)
+      # - CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET  (alias soportado por la app)
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+    healthCheckPath: /

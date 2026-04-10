@@ -1,0 +1,16 @@
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.vsidx
+*.dll
+*.pdb
+*.exe
+*.db
+appsettings.Development.json
+
+# Volcados completos de PostgreSQL (datos sensibles; no versionar)
+Backups/

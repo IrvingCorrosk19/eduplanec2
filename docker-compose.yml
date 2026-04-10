@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: eduplanner-postgres
+    environment:
+      POSTGRES_DB: schoolmanagement_5uke
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: s5zPGRTcqiDhbNfiVsJcRj28TPtanwNX
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./SchoolManagement.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - eduplanner-network
+    restart: unless-stopped
+
+  # Aplicación EduPlanner
+  eduplanner-app:
+    build:
+      context: ./SchoolManager
+      dockerfile: Dockerfile
+    container_name: eduplanner-app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=schoolmanagement_5uke;Username=admin;Password=s5zPGRTcqiDhbNfiVsJcRj28TPtanwNX;Port=5432
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - eduplanner-network
+    volumes:
+      - uploads_data:/app/wwwroot/uploads
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+networks:
+  eduplanner-network:
+    driver: bridge
