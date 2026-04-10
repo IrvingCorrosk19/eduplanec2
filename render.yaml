@@ -10,8 +10,9 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      # Postgres Render (host interno servicio web <-> BD en la misma cuenta Render)
       - key: ConnectionStrings__DefaultConnection
-        sync: false  # Pegar en Render: Internal Database URL o cadena Npgsql del Postgres
+        value: "Host=dpg-d7c3impj2pic73bjujs0-a;Port=5432;Database=schoolmanager_hx5i;Username=admin;Password=JkIkUXCu2Smlx2XvgppLM603gVvGIAX2;SSL Mode=Require;Trust Server Certificate=true"
       # Cloudinary (una sola vez en dashboard.cloudinary.com). Válido cualquiera de los dos formatos:
       # - Cloudinary__CloudName / __ApiKey / __ApiSecret  (.NET)
       # - CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET  (alias soportado por la app)
