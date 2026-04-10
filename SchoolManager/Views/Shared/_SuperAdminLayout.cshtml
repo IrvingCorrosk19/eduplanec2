@@ -13,6 +13,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
 </head>
 <body class="hold-transition sidebar-mini">
+@{
+    var rd = ViewContext.RouteData.Values;
+    var currentAction = rd["action"]?.ToString() ?? rd["Action"]?.ToString();
+    var currentController = rd["controller"]?.ToString() ?? rd["Controller"]?.ToString();
+    var path = ViewContext.HttpContext.Request.Path.Value ?? "";
+    var isStudentIdCardUi =
+        (string.Equals(currentController, "StudentIdCard", StringComparison.OrdinalIgnoreCase)
+         && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase))
+        || path.StartsWith("/StudentIdCard/ui", StringComparison.OrdinalIgnoreCase);
+}
     <div class="wrapper">
         <!-- Navbar -->
         <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -49,58 +59,58 @@
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                         <li class="nav-item">
-                            <a href="/SuperAdmin/Index" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")">
+                            <a href="/SuperAdmin/Index" class="nav-link @(currentAction == "Index" && !isStudentIdCardUi ? "active" : "")">
                                 <i class="nav-icon fas fa-tachometer-alt"></i>
                                 <p>Dashboard</p>
                             </a>
                         </li>
                         <li class="nav-header">GESTIÓN DE ESCUELAS</li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/CreateSchoolWithAdmin" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateSchoolWithAdmin" ? "active" : "")">
+                            <a href="/SuperAdmin/CreateSchoolWithAdmin" class="nav-link @(currentAction == "CreateSchoolWithAdmin" ? "active" : "")">
                                 <i class="nav-icon fas fa-plus-circle"></i>
                                 <p>Nueva Escuela</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/ListSchools" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListSchools" ? "active" : "")">
+                            <a href="/SuperAdmin/ListSchools" class="nav-link @(currentAction == "ListSchools" ? "active" : "")">
                                 <i class="nav-icon fas fa-building"></i>
                                 <p>Lista de Escuelas</p>
                             </a>
                         </li>
                         <li class="nav-header">GESTIÓN DE USUARIOS</li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/ListAdmins" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListAdmins" ? "active" : "")">
+                            <a href="/SuperAdmin/ListAdmins" class="nav-link @(currentAction == "ListAdmins" ? "active" : "")">
                                 <i class="nav-icon fas fa-user-shield"></i>
                                 <p>Administradores</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/StudentDirectory" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "StudentDirectory" ? "active" : "")">
+                            <a href="/SuperAdmin/StudentDirectory" class="nav-link @(currentAction == "StudentDirectory" ? "active" : "")">
                                 <i class="nav-icon fas fa-user-graduate"></i>
                                 <p>Estudiantes</p>
                             </a>
                         </li>
                         <li class="nav-header">CONFIGURACIÓN</li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/EmailApiSettings" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "EmailApiSettings" ? "active" : "")">
+                            <a href="/SuperAdmin/EmailApiSettings" class="nav-link @(currentAction == "EmailApiSettings" ? "active" : "")">
                                 <i class="nav-icon fas fa-paper-plane"></i>
                                 <p>Correo API (Resend)</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/StudentIdCard/ui" class="nav-link">
+                            <a href="/StudentIdCard/ui" class="nav-link @(isStudentIdCardUi ? "active" : "")">
                                 <i class="nav-icon fas fa-id-card"></i>
                                 <p>Carnet Estudiantil</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/SystemSettings" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "SystemSettings" ? "active" : "")">
+                            <a href="/SuperAdmin/SystemSettings" class="nav-link @(currentAction == "SystemSettings" ? "active" : "")">
                                 <i class="nav-icon fas fa-sliders-h"></i>
                                 <p>Configuración</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/SuperAdmin/Backup" class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "Backup" ? "active" : "")">
+                            <a href="/SuperAdmin/Backup" class="nav-link @(currentAction == "Backup" ? "active" : "")">
                                 <i class="nav-icon fas fa-database"></i>
                                 <p>Respaldo</p>
                             </a>
