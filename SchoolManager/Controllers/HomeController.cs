@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -54,9 +55,17 @@ namespace SchoolManager.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
+            var ex = HttpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
+            if (ex != null)
+            {
+                var path = HttpContext.Features.Get<IExceptionHandlerPathFeature>()?.Path;
+                _logger.LogError(ex, "Unhandled exception. Path={Path}", path);
+            }
+
             return View(new ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }

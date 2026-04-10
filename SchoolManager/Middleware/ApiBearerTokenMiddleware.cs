@@ -21,11 +21,12 @@ public class ApiBearerTokenMiddleware
 
     public async Task InvokeAsync(HttpContext context, SchoolDbContext db)
     {
+        var authHeader = context.Request.Headers.Authorization.ToString();
         if (context.User?.Identity?.IsAuthenticated != true &&
-            context.Request.Headers.Authorization.FirstOrDefault() is string auth &&
-            auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            !string.IsNullOrEmpty(authHeader) &&
+            authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            var token = auth["Bearer ".Length..].Trim();
+            var token = authHeader["Bearer ".Length..].Trim();
             if (!string.IsNullOrEmpty(token))
             {
                 try
