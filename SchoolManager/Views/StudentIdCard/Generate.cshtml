@@ -19,6 +19,21 @@
     var hasLogo = !string.IsNullOrWhiteSpace(Model.SchoolLogoUrl);
     var showWm = Model.ShowWatermark && hasLogo;
     var hasEmergencyQr = hasCard && Model.ShowQr && !string.IsNullOrEmpty(Model.Card?.EmergencyInfoQrImageDataUrl);
+    // Frente: Cloudinary u otros CDN → URL directa (evita /File/GetSchoolLogo sin cookie en captura PDF); local → proxy autenticado
+    string SchoolLogoImgSrc(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "";
+        var t = url.Trim();
+        if ((t.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || t.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            && Uri.TryCreate(t, UriKind.Absolute, out var abs)
+            && abs.Host.EndsWith("cloudinary.com", StringComparison.OrdinalIgnoreCase))
+            return t;
+        return "/File/GetSchoolLogo?logoUrl=" + Uri.EscapeDataString(t);
+    }
+    var frontLogoSrc = SchoolLogoImgSrc(Model.SchoolLogoUrl);
+    // Póliza del frente: visibilidad desde configuración del carnet (ShowPolicyNumber); número en datos de la escuela (PolicyNumber)
+    var showFrontPolicy = Model.ShowPolicyNumber;
+    var policyNumberDisplay = string.IsNullOrWhiteSpace(Model.PolicyNumber) ? "—" : Model.PolicyNumber!.Trim();
     var gradeGroupCompact = "—";
     if (hasCard && Model.Card != null)
     {
@@ -133,12 +148,29 @@
         width: 100%;
     }
 
+    /* Logo institucional: sello circular sobre barra de color (referencia diseño frente) */
+    .idcard-logo-ring {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+        min-height: 56px;
+        border-radius: 50%;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        flex-shrink: 0;
+    }
+
     .idcard-logo-center {
-        max-width: 48px;
-        max-height: 48px;
+        max-width: 100%;
+        max-height: 100%;
         width: auto;
         height: auto;
         object-fit: contain;
+        border-radius: 50%;
     }
 
     .idcard-school-name {
@@ -199,31 +231,51 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #E6EEF7;
-        padding: 6px 6px;
+        background: #E8F0FA;
+        padding: 8px 8px 8px 6px;
         margin: 0;
         border-radius: 0 0 8px 8px;
         flex-shrink: 0;
-        min-height: 70px;
+        min-height: 72px;
+        gap: 6px;
     }
 
     .idcard-policy-section .policy-text {
         flex: 1;
         min-width: 0;
-        padding-right: 6px;
+        padding-right: 4px;
+        display: flex;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .idcard-policy-section .policy-shield {
+        color: @primary;
+        font-size: 9px;
+        margin-top: 1px;
+        flex-shrink: 0;
+        opacity: 0.95;
+    }
+
+    .idcard-policy-section .policy-copy {
+        min-width: 0;
+        flex: 1;
     }
 
     .idcard-policy-section .policy-label {
-        font-size: 5.5pt;
+        font-size: 6pt;
         font-weight: 700;
         color: @primary;
-        line-height: 1.25;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
     }
 
     .idcard-policy-section .policy-number {
-        font-size: 5pt;
+        font-size: 7pt;
+        font-weight: 700;
         color: @text;
-        line-height: 1.2;
+        line-height: 1.25;
+        margin-top: 2px;
     }
 
     .idcard-policy-section .policy-id {
@@ -376,15 +428,17 @@
                             @if (showWm)
                             {
                                 <div class="idcard-watermark" aria-hidden="true">
-                                    <img src="/File/GetSchoolLogo?logoUrl=@Uri.EscapeDataString(Model.SchoolLogoUrl ?? "")" alt="" onerror="this.parentElement.style.display='none'" />
+                                    <img src="@frontLogoSrc" alt="" onerror="this.parentElement.style.display='none'" />
                                 </div>
                             }
 
-                            @* ZONA 1: Header — logo centrado + nombre centrado *@
+                            @* ZONA 1: Header — logo en sello circular + nombre centrado *@
                             <div class="idcard-header idcard-z1">
                                 @if (hasLogo)
                                 {
-                                    <img src="/File/GetSchoolLogo?logoUrl=@Uri.EscapeDataString(Model.SchoolLogoUrl ?? "")" alt="" class="idcard-logo-center" onerror="this.style.display='none'" />
+                                    <div class="idcard-logo-ring">
+                                        <img src="@frontLogoSrc" alt="" class="idcard-logo-center" onerror="this.parentElement.style.display='none'" />
+                                    </div>
                                 }
                                 <div class="idcard-school-name">@Model.SchoolName</div>
                             </div>
@@ -419,12 +473,13 @@
                             @* ZONA 4+5: Bloque unificado — Póliza + ID + QR (flush con bordes) *@
                             <div class="idcard-policy-section idcard-z1">
                                 <div class="policy-text">
-                                    @if (Model.ShowPolicyNumber && !string.IsNullOrWhiteSpace(Model.PolicyNumber))
+                                    @if (showFrontPolicy)
                                     {
-                                        <div class="policy-label">
-                                            <i class="fas fa-shield-alt me-1" style="font-size:5pt"></i>Póliza de Seguro Educativo
+                                        <i class="fas fa-shield-alt policy-shield" aria-hidden="true"></i>
+                                        <div class="policy-copy">
+                                            <div class="policy-label">Póliza de Seguro Educativo</div>
+                                            <div class="policy-number">@policyNumberDisplay</div>
                                         </div>
-                                        <div class="policy-number">@Model.PolicyNumber</div>
                                     }
                                     @* Se omite el ID visual en la vista previa (se mantiene en PDF y trazabilidad interna). *@
                                 </div>
