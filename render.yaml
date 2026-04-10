@@ -4,13 +4,16 @@ services:
   - type: web
     name: eduplaneriic
     runtime: docker
-    dockerfilePath: ./SchoolManager/Dockerfile
-    dockerContext: ./SchoolManager
+    # Mismo Dockerfile que suelen detectar los servicios creados desde la raíz del repo (COPY SchoolManager/...)
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free  # o starter, standard según plan
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      # Postgres Render (host interno servicio web <-> BD en la misma cuenta Render)
+      # Postgres (interno). También va en Dockerfile por si el servicio no aplica env del blueprint.
+      - key: DATABASE_URL
+        value: postgresql://admin:JkIkUXCu2Smlx2XvgppLM603gVvGIAX2@dpg-d7c3impj2pic73bjujs0-a:5432/schoolmanager_hx5i?sslmode=require
       - key: ConnectionStrings__DefaultConnection
         value: "Host=dpg-d7c3impj2pic73bjujs0-a;Port=5432;Database=schoolmanager_hx5i;Username=admin;Password=JkIkUXCu2Smlx2XvgppLM603gVvGIAX2;SSL Mode=Require;Trust Server Certificate=true"
       # Cloudinary (una sola vez en dashboard.cloudinary.com). Válido cualquiera de los dos formatos:

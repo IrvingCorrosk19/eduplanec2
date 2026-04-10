@@ -53,6 +53,8 @@ RUN mkdir -p /app/wwwroot/uploads && \
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV DOTNET_RUNNING_IN_CONTAINER=true
+# Postgres Render (URL interna; la app lee DATABASE_URL en PostgresConnectionResolver)
+ENV DATABASE_URL=postgresql://admin:JkIkUXCu2Smlx2XvgppLM603gVvGIAX2@dpg-d7c3impj2pic73bjujs0-a:5432/schoolmanager_hx5i?sslmode=require
 
 # Exponer el puerto
 EXPOSE 8080

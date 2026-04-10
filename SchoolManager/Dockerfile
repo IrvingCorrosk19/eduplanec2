@@ -10,6 +10,8 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 EXPOSE 8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DATABASE_URL=postgresql://admin:JkIkUXCu2Smlx2XvgppLM603gVvGIAX2@dpg-d7c3impj2pic73bjujs0-a:5432/schoolmanager_hx5i?sslmode=require
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
