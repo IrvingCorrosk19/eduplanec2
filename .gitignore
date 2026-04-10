@@ -372,6 +372,7 @@ wwwroot/uploads/
 
 # Environment specific files
 appsettings.Production.json
+!SchoolManager/appsettings.Production.json
 appsettings.Staging.json
 
 # Logs

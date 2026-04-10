@@ -25,4 +25,7 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # Firma HMAC de QRs del carnet (mín. 20 chars). Sin esto, StudentIdCard falla al inyectar IQrSignatureService.
+      - key: QrSecurity__SecretKey
+        generateValue: true
     healthCheckPath: /
