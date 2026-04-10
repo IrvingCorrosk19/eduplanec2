@@ -25,33 +25,26 @@ using SchoolManager.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 // Render / docs de Cloudinary suelen usar CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
-// También vale Cloudinary__CloudName en el entorno. Hay que sobrescribir placeholders de appsettings (TU_… / …AQUI…).
+// También vale Cloudinary__CloudName. Esas variables deben GANAR siempre a appsettings; si no, un ApiSecret viejo
+// en JSON (aunque parezca "válido") deja la firma HMAC desalineada → Cloudinary responde "Invalid Signature".
 static void ApplyCloudinaryEnvironmentAliases(ConfigurationManager config)
 {
-    static bool IsPlaceholderValue(string? value)
+    void SetFromFirstEnv(string configKey, params string[] envKeys)
     {
-        if (string.IsNullOrWhiteSpace(value)) return true;
-        var t = value.Trim();
-        return t.StartsWith("TU_", StringComparison.OrdinalIgnoreCase)
-            || t.Contains("AQUI", StringComparison.OrdinalIgnoreCase);
+        foreach (var envKey in envKeys)
+        {
+            var raw = Environment.GetEnvironmentVariable(envKey);
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            // Quitar espacios/saltos típicos al pegar en el panel de Render
+            config[configKey] = raw.Trim().TrimStart('\uFEFF');
+            return;
+        }
     }
 
-    void MapFromEnv(string configKey, string envKey)
-    {
-        var fromEnv = Environment.GetEnvironmentVariable(envKey);
-        if (string.IsNullOrWhiteSpace(fromEnv)) return;
-        var current = config[configKey];
-        if (IsPlaceholderValue(current))
-            config[configKey] = fromEnv.Trim();
-    }
-
-    MapFromEnv("Cloudinary:CloudName", "CLOUDINARY_CLOUD_NAME");
-    MapFromEnv("Cloudinary:ApiKey", "CLOUDINARY_API_KEY");
-    MapFromEnv("Cloudinary:ApiSecret", "CLOUDINARY_API_SECRET");
-    // Mismo criterio si usan nombres .NET en Render (Cloudinary__CloudName, etc.)
-    MapFromEnv("Cloudinary:CloudName", "Cloudinary__CloudName");
-    MapFromEnv("Cloudinary:ApiKey", "Cloudinary__ApiKey");
-    MapFromEnv("Cloudinary:ApiSecret", "Cloudinary__ApiSecret");
+    // Prioridad: nombres estilo documentación Cloudinary, luego convención .NET (__).
+    SetFromFirstEnv("Cloudinary:CloudName", "CLOUDINARY_CLOUD_NAME", "Cloudinary__CloudName");
+    SetFromFirstEnv("Cloudinary:ApiKey", "CLOUDINARY_API_KEY", "Cloudinary__ApiKey");
+    SetFromFirstEnv("Cloudinary:ApiSecret", "CLOUDINARY_API_SECRET", "Cloudinary__ApiSecret");
 }
 
 ApplyCloudinaryEnvironmentAliases(builder.Configuration);
