@@ -130,6 +130,19 @@ if (args.Length > 0 && args[0] == "--create-initial-superadmin")
     return;
 }
 
+// Vaciar toda la BD (excepto historial EF) y dejar solo superadmin@schoolmanager.com / Admin123!
+if (args.Length > 0 && args[0] == "--wipe-database-keep-superadmin")
+{
+    var connStrWipe = PostgresConnectionResolver.Resolve(builder.Configuration);
+    if (string.IsNullOrEmpty(connStrWipe)) { Console.WriteLine("Falta conexión: DefaultConnection, ConnectionStrings__DefaultConnection o DATABASE_URL."); Environment.Exit(1); return; }
+    var optsWipe = new DbContextOptionsBuilder<SchoolDbContext>().UseNpgsql(connStrWipe).Options;
+    await using var ctxWipe = new SchoolDbContext(optsWipe);
+    Console.WriteLine("⚠️  Borrando todos los datos de tablas public (se conserva __EFMigrationsHistory)...");
+    await SchoolManager.Scripts.WipeDatabaseKeepSuperAdminScript.RunAsync(ctxWipe);
+    Console.WriteLine("✅ Listo. Solo queda el superadmin (superadmin@schoolmanager.com / Admin123!).");
+    return;
+}
+
 // Crear admin local (admin@local.com / Admin123!). Crea escuela si no existe.
 if (args.Length > 0 && args[0] == "--create-local-admin")
 {
