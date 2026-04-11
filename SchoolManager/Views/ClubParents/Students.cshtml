@@ -14,23 +14,53 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-3">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6 col-md-2">
                             <label class="form-label">Grado</label>
                             <select id="filterGrade" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-2">
                             <label class="form-label">Grupo</label>
                             <select id="filterGroup" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                             </select>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" id="btnFilter" class="btn btn-primary btn-sm">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">Jornada</label>
+                            <select id="filterShift" class="form-select form-select-sm">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">Carnet</label>
+                            <select id="filterCarnet" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Pagado">Pagado</option>
+                                <option value="Impreso">Impreso</option>
+                                <option value="Entregado">Entregado</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">Plataforma</label>
+                            <select id="filterPlatform" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Activo">Activo</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-3 d-flex align-items-end">
+                            <button type="button" id="btnFilter" class="btn btn-primary btn-sm w-100 w-md-auto">
                                 <i class="fas fa-filter"></i> Filtrar
                             </button>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-8 col-lg-6">
+                            <label class="form-label" for="filterSearch">Buscar (nombre, correo o documento)</label>
+                            <input type="search" id="filterSearch" class="form-control form-control-sm" placeholder="Escriba y pulse Filtrar" autocomplete="off" />
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -91,13 +121,18 @@
             .then(function(data) {
                 var g = document.getElementById('filterGrade');
                 var gr = document.getElementById('filterGroup');
+                var sh = document.getElementById('filterShift');
                 g.options.length = 1;
                 gr.options.length = 1;
+                sh.options.length = 1;
                 (data.grades || []).forEach(function(x) {
                     g.appendChild(new Option(x.name, x.id));
                 });
                 (data.groups || []).forEach(function(x) {
                     gr.appendChild(new Option(x.name, x.id));
+                });
+                (data.shifts || []).forEach(function(name) {
+                    if (name) sh.appendChild(new Option(name, name));
                 });
             })
             .catch(function(e) { console.error('Grades/Groups', e); });
@@ -106,9 +141,17 @@
     function loadStudents() {
         var gradeId = document.getElementById('filterGrade').value || '';
         var groupId = document.getElementById('filterGroup').value || '';
+        var shift = document.getElementById('filterShift').value || '';
+        var carnet = document.getElementById('filterCarnet').value || '';
+        var platform = document.getElementById('filterPlatform').value || '';
+        var search = (document.getElementById('filterSearch').value || '').trim();
         var url = '/ClubParents/Api/Students?';
         if (gradeId) url += 'gradeId=' + encodeURIComponent(gradeId) + '&';
         if (groupId) url += 'groupId=' + encodeURIComponent(groupId) + '&';
+        if (shift) url += 'shift=' + encodeURIComponent(shift) + '&';
+        if (carnet) url += 'carnetStatus=' + encodeURIComponent(carnet) + '&';
+        if (platform) url += 'platformStatus=' + encodeURIComponent(platform) + '&';
+        if (search) url += 'search=' + encodeURIComponent(search) + '&';
 
         fetch(url, { credentials: 'include' })
             .then(function(r) { return r.json(); })

@@ -47,7 +47,7 @@ public class ClubParentsController : Controller
         if (school == null)
         {
             _logger.LogWarning("[ClubParents] GetGradesAndGroups: usuario sin escuela");
-            return Ok(new { grades = Array.Empty<object>(), groups = Array.Empty<object>() });
+            return Ok(new { grades = Array.Empty<object>(), groups = Array.Empty<object>(), shifts = Array.Empty<string>() });
         }
 
         var grades = await _context.GradeLevels
@@ -60,19 +60,37 @@ public class ClubParentsController : Controller
             .OrderBy(g => g.Name)
             .Select(g => new { id = g.Id, name = g.Name })
             .ToListAsync();
-        return Ok(new { grades, groups });
+        var shiftValues = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Role != null && (u.Role.ToLower() == "student" || u.Role.ToLower() == "estudiante"))
+            .Where(u => u.SchoolId == school.Id
+                || u.StudentAssignments.Any(sa => sa.IsActive && sa.Grade.SchoolId == school.Id))
+            .Where(u => u.Shift != null && u.Shift != "")
+            .Select(u => u.Shift!)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToListAsync();
+
+        return Ok(new { grades, groups, shifts = shiftValues });
     }
 
-    /// <summary>GET /ClubParents/Api/Students — Lista estudiantes con filtros opcionales gradeId, groupId. Si el usuario no tiene escuela asignada, devuelve noSchool: true.</summary>
+    /// <summary>GET /ClubParents/Api/Students — Lista estudiantes con filtros opcionales. Si el usuario no tiene escuela asignada, devuelve noSchool: true.</summary>
     [HttpGet("Api/Students")]
-    public async Task<IActionResult> GetStudents([FromQuery] Guid? gradeId, [FromQuery] Guid? groupId)
+    public async Task<IActionResult> GetStudents(
+        [FromQuery] Guid? gradeId,
+        [FromQuery] Guid? groupId,
+        [FromQuery] string? carnetStatus,
+        [FromQuery] string? platformStatus,
+        [FromQuery] string? search,
+        [FromQuery] string? shift)
     {
         try
         {
             var userId = await _currentUserService.GetCurrentUserIdAsync();
             var school = await _currentUserService.GetCurrentUserSchoolAsync();
-            _logger.LogInformation("[ClubParents] GetStudents called UserId={UserId} SchoolId={SchoolId} SchoolName={SchoolName} gradeId={GradeId} groupId={GroupId}",
-                userId, school?.Id, school?.Name ?? "(null)", gradeId, groupId);
+            _logger.LogInformation(
+                "[ClubParents] GetStudents called UserId={UserId} SchoolId={SchoolId} SchoolName={SchoolName} gradeId={GradeId} groupId={GroupId} carnetStatus={CarnetStatus} platformStatus={PlatformStatus} search={Search} shift={Shift}",
+                userId, school?.Id, school?.Name ?? "(null)", gradeId, groupId, carnetStatus, platformStatus, search, shift);
 
             if (school == null)
             {
@@ -80,7 +98,7 @@ public class ClubParentsController : Controller
                 return Ok(new { data = Array.Empty<ClubParentsStudentDto>(), noSchool = true, message = "Su usuario no tiene una escuela asignada. Asigne la escuela en Usuarios para ver los estudiantes." });
             }
 
-            var list = await _service.GetStudentsAsync(gradeId, groupId);
+            var list = await _service.GetStudentsAsync(gradeId, groupId, carnetStatus, platformStatus, search, shift);
             _logger.LogInformation("[ClubParents] GetStudents returning {Count} students for SchoolId={SchoolId}", list.Count, school.Id);
             return Ok(new { data = list });
         }
