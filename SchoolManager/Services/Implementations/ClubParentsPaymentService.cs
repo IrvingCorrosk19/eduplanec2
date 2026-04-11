@@ -59,10 +59,17 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
 
         if (searchTerm != null)
         {
+            var likePattern = "%" + searchTerm + "%";
+            var digitsOnly = new string(searchTerm.Where(char.IsDigit).ToArray());
             userQuery = userQuery.Where(u =>
-                (u.Name + " " + u.LastName).Contains(searchTerm)
-                || u.Email.Contains(searchTerm)
-                || (u.DocumentId != null && u.DocumentId.Contains(searchTerm)));
+                EF.Functions.ILike(u.Name, likePattern)
+                || EF.Functions.ILike(u.LastName, likePattern)
+                || EF.Functions.ILike(u.Name + " " + u.LastName, likePattern)
+                || EF.Functions.ILike(u.Email, likePattern)
+                || (u.DocumentId != null && EF.Functions.ILike(u.DocumentId, likePattern))
+                || (digitsOnly.Length > 0 && u.DocumentId != null
+                    && u.DocumentId.Replace(".", "").Replace("-", "").Replace(" ", "")
+                        .Contains(digitsOnly)));
         }
 
         if (shiftFilter != null)
@@ -98,6 +105,7 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
             {
                 Id = x.u.Id,
                 FullName = (x.u.Name + " " + x.u.LastName) ?? "",
+                DocumentId = x.u.DocumentId,
                 Grade = x.u.StudentAssignments.Where(sa => sa.IsActive).Select(sa => sa.Grade.Name).FirstOrDefault() ?? "Sin asignar",
                 Group = x.u.StudentAssignments.Where(sa => sa.IsActive).Select(sa => sa.Group.Name).FirstOrDefault() ?? "Sin asignar",
                 CarnetStatus = x.spa == null ? CarnetPendiente : x.spa.CarnetStatus,

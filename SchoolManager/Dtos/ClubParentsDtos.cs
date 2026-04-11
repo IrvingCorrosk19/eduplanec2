@@ -7,6 +7,8 @@ public class ClubParentsStudentDto
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = "";
+    /// <summary>Cédula o documento (users.document_id).</summary>
+    public string? DocumentId { get; set; }
     public string Grade { get; set; } = "";
     public string Group { get; set; } = "";
     public string CarnetStatus { get; set; } = "Pendiente";
