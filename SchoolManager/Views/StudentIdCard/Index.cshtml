@@ -51,6 +51,14 @@
     #studentsTable_wrapper .dataTables_filter input { border-radius: 6px; }
     #studentsTable thead th { white-space: nowrap; vertical-align: middle; }
     #studentsTable td { vertical-align: middle; }
+    .idcard-student-thumb {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border: 1px solid #e5e7eb;
+        vertical-align: middle;
+        background: #f8f9fa;
+    }
     .btn-xs { padding: .2rem .4rem; font-size: .75rem; line-height: 1.1; }
     .dataTables_wrapper .dataTables_paginate .paginate_button { padding: .2em .6em; }
 
@@ -171,6 +179,7 @@
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="selectAllStudents" title="Seleccionar página" /></th>
+                                <th class="text-center" title="Foto de perfil">Foto</th>
                                 <th>Estudiante</th>
                                 <th>Grado</th>
                                 <th>Grupo</th>
@@ -224,6 +233,20 @@ $(function(){
                 width: '35px',
                 render: function(data) {
                     return `<input type="checkbox" class="student-check" value="${data}" ${selectedStudentIds.has(String(data)) ? 'checked' : ''} />`;
+                }
+            },
+            {
+                data: 'photoUrl',
+                title: '',
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                width: '52px',
+                render: function(data) {
+                    var src = data
+                        ? '/File/GetUserPhoto?photoUrl=' + encodeURIComponent(data)
+                        : '/File/GetUserPhoto';
+                    return '<img src="' + src + '" class="rounded idcard-student-thumb" width="44" height="44" alt="" loading="lazy" />';
                 }
             },
             { data: 'fullName', title: 'Estudiante' },

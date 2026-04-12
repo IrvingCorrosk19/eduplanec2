@@ -531,6 +531,7 @@ public class StudentIdCardController : Controller
             {
                 id = u.Id,
                 fullName = $"{u.Name} {u.LastName}",
+                photoUrl = u.PhotoUrl,
                 grade = u.StudentAssignments
                     .Where(sa => sa.IsActive)
                     .Select(sa => sa.Grade.Name)
@@ -555,6 +556,7 @@ public class StudentIdCardController : Controller
             {
                 x.id,
                 x.fullName,
+                x.photoUrl,
                 x.grade,
                 x.group,
                 x.shift,
