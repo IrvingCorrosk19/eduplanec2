@@ -282,12 +282,27 @@ public class UserController : Controller
         return View(user);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
+    [ActionName("Delete")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-        await _userService.DeleteAsync(id);
-        TempData["SuccessMessage"] = "Usuario eliminado exitosamente.";
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _userService.DeleteAsync(id);
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+                return Json(new { success = true });
+            TempData["SuccessMessage"] = "Usuario eliminado exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[User] DeleteConfirmed falló UserId={UserId}", id);
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { success = false, message = ex.Message });
+            TempData["Error"] = ex.Message;
+            return RedirectToAction(nameof(Index));
+        }
     }
 
     [HttpGet]

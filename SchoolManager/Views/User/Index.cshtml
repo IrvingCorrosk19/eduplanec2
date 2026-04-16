@@ -1314,16 +1314,24 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: `/User/DeleteConfirmed/${userId}`,
-                            type: 'POST'
+                            url: '/User/Delete/' + encodeURIComponent(userId),
+                            type: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            }
                         })
-                        .done(function () {
+                        .done(function (res) {
+                            if (res && res.success === false) {
+                                Swal.fire('Error', res.message || 'No se pudo eliminar.', 'error');
+                                return;
+                            }
                             Swal.fire('Eliminado', 'Usuario eliminado correctamente', 'success')
                                 .then(() => location.reload());
                         })
                         .fail(function (xhr) {
                             const message = xhr.responseJSON?.message || xhr.responseText || 'Error inesperado';
-                            Swal.fire('Error', message, 'error');
+                            Swal.fire('Error', typeof message === 'string' ? message : 'Error inesperado', 'error');
                         });
                     }
                 });

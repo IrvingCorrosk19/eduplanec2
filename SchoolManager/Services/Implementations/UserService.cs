@@ -334,84 +334,219 @@ public class UserService : IUserService
     }
 
 
-public async Task DeleteAsync(Guid id)
-{
-        await using var transaction = await _context.Database.BeginTransactionAsync(); // �� INICIO TRANSACCIÓN
-
-    try
+    public async Task DeleteAsync(Guid id)
     {
-        var user = await _context.Users
-            .Include(u => u.Subjects)
-            .Include(u => u.Groups)
-            .Include(u => u.Grades)
-            .FirstOrDefaultAsync(u => u.Id == id);
+        await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        if (user == null)
-            throw new InvalidOperationException($"No se encontró el usuario con ID: {id}");
-
-        // Validar el rol usando enum
-        if (!Enum.TryParse<UserRole>(user.Role, true, out var parsedRole))
-            throw new InvalidOperationException($"Rol no válido o no soportado: {user.Role}");
-
-        switch (parsedRole)
+        try
         {
-            case UserRole.Student:
-            case UserRole.Estudiante:
-                // MEJORADO: Inactivar asignaciones en lugar de eliminarlas (preserva historial)
-                var studentAssignments = await _context.StudentAssignments
-                    .Where(sa => sa.StudentId == id && sa.IsActive)
-                    .ToListAsync();
-                
-                if (studentAssignments.Any())
-                {
-                    foreach (var assignment in studentAssignments)
-                    {
-                        assignment.IsActive = false;
-                        assignment.EndDate = DateTime.UtcNow;
-                    }
-                    _context.StudentAssignments.UpdateRange(studentAssignments);
-                }
-                break;
+            var user = await _context.Users
+                .Include(u => u.Subjects)
+                .Include(u => u.Groups)
+                .Include(u => u.Grades)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            case UserRole.Teacher:
-                var teacherAssignments = await _context.TeacherAssignments
-                    .Where(ta => ta.TeacherId == id)
-                    .ToListAsync();
-                _context.TeacherAssignments.RemoveRange(teacherAssignments);
-                break;
+            if (user == null)
+                throw new InvalidOperationException($"No se encontró el usuario con ID: {id}");
 
-            case UserRole.Admin:
-            case UserRole.Director:
-            case UserRole.Secretaria:
-                // No asignaciones específicas
-                break;
+            if (!Enum.TryParse<UserRole>(user.Role, true, out var parsedRole))
+                throw new InvalidOperationException($"Rol no válido o no soportado: {user.Role}");
 
-            default:
-                throw new InvalidOperationException($"Rol no manejado: {parsedRole}");
+            switch (parsedRole)
+            {
+                case UserRole.Admin:
+                case UserRole.Director:
+                case UserRole.Secretaria:
+                case UserRole.Student:
+                case UserRole.Estudiante:
+                case UserRole.Teacher:
+                    break;
+                default:
+                    throw new InvalidOperationException($"Rol no manejado: {parsedRole}");
+            }
+
+            await RemoveUserDeletionBlockersAsync(id, parsedRole);
+
+            user.Subjects.Clear();
+            user.Groups.Clear();
+            user.Grades.Clear();
+
+            await _context.SaveChangesAsync();
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch (DbUpdateException dbEx)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(dbEx, "[UserService] DeleteAsync DbUpdateException UserId={UserId}", id);
+            throw new Exception("No se puede eliminar el usuario porque tiene dependencias en otras entidades.", dbEx);
+        }
+        catch (InvalidOperationException)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "[UserService] DeleteAsync error UserId={UserId}", id);
+            throw new Exception("Error inesperado al eliminar el usuario.", ex);
+        }
+    }
+
+    private async Task RemoveUserDeletionBlockersAsync(Guid userId, UserRole role)
+    {
+        var auditLogs = await _context.AuditLogs.Where(a => a.UserId == userId).ToListAsync();
+        if (auditLogs.Count != 0)
+            _context.AuditLogs.RemoveRange(auditLogs);
+
+        await ClearMessagesForUserAsync(userId);
+
+        var jobIds = await _context.EmailJobs.Where(j => j.CreatedByUserId == userId).Select(j => j.Id).ToListAsync();
+        if (jobIds.Count != 0)
+        {
+            var queueForJobs = await _context.EmailQueues
+                .Where(q => q.JobId != null && jobIds.Contains(q.JobId.Value))
+                .ToListAsync();
+            if (queueForJobs.Count != 0)
+                _context.EmailQueues.RemoveRange(queueForJobs);
+            var jobs = await _context.EmailJobs.Where(j => jobIds.Contains(j.Id)).ToListAsync();
+            if (jobs.Count != 0)
+                _context.EmailJobs.RemoveRange(jobs);
         }
 
-        // Limpieza de relaciones M:M
-        //user.Subjects.Clear();
-        //user.Groups.Clear();
-        //user.Grades.Clear();
+        var counselorRows = await _context.CounselorAssignments.Where(c => c.UserId == userId).ToListAsync();
+        if (counselorRows.Count != 0)
+            _context.CounselorAssignments.RemoveRange(counselorRows);
 
-        await _context.SaveChangesAsync();
+        if (role is UserRole.Student or UserRole.Estudiante)
+        {
+            var spa = await _context.StudentPaymentAccesses.Where(x => x.StudentId == userId).ToListAsync();
+            if (spa.Count != 0)
+                _context.StudentPaymentAccesses.RemoveRange(spa);
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
+            var sas = await _context.StudentAssignments.Where(sa => sa.StudentId == userId).ToListAsync();
+            if (sas.Count != 0)
+                _context.StudentAssignments.RemoveRange(sas);
 
-        await transaction.CommitAsync();
+            await DeletePrematriculationsForStudentAsync(userId);
+
+            var scores = await _context.StudentActivityScores.Where(s => s.StudentId == userId).ToListAsync();
+            if (scores.Count != 0)
+                _context.StudentActivityScores.RemoveRange(scores);
+
+            var discS = await _context.DisciplineReports.Where(d => d.StudentId == userId).ToListAsync();
+            if (discS.Count != 0)
+                _context.DisciplineReports.RemoveRange(discS);
+
+            var oriS = await _context.OrientationReports.Where(o => o.StudentId == userId).ToListAsync();
+            if (oriS.Count != 0)
+                _context.OrientationReports.RemoveRange(oriS);
+
+            var attS = await _context.Attendances.Where(a => a.StudentId == userId).ToListAsync();
+            if (attS.Count != 0)
+                _context.Attendances.RemoveRange(attS);
+        }
+
+        if (role == UserRole.Teacher)
+        {
+            var taIds = await _context.TeacherAssignments.Where(t => t.TeacherId == userId).Select(t => t.Id).ToListAsync();
+            if (taIds.Count != 0)
+            {
+                var se = await _context.ScheduleEntries.Where(s => taIds.Contains(s.TeacherAssignmentId)).ToListAsync();
+                if (se.Count != 0)
+                    _context.ScheduleEntries.RemoveRange(se);
+            }
+
+            var tas = await _context.TeacherAssignments.Where(t => t.TeacherId == userId).ToListAsync();
+            if (tas.Count != 0)
+                _context.TeacherAssignments.RemoveRange(tas);
+
+            var planIds = await _context.TeacherWorkPlans.Where(t => t.TeacherId == userId).Select(t => t.Id).ToListAsync();
+            if (planIds.Count != 0)
+            {
+                var twpLogs = await _context.TeacherWorkPlanReviewLogs
+                    .Where(l => planIds.Contains(l.TeacherWorkPlanId))
+                    .ToListAsync();
+                if (twpLogs.Count != 0)
+                    _context.TeacherWorkPlanReviewLogs.RemoveRange(twpLogs);
+                var twpDetails = await _context.TeacherWorkPlanDetails
+                    .Where(d => planIds.Contains(d.TeacherWorkPlanId))
+                    .ToListAsync();
+                if (twpDetails.Count != 0)
+                    _context.TeacherWorkPlanDetails.RemoveRange(twpDetails);
+                var twps = await _context.TeacherWorkPlans.Where(t => planIds.Contains(t.Id)).ToListAsync();
+                if (twps.Count != 0)
+                    _context.TeacherWorkPlans.RemoveRange(twps);
+            }
+
+            var otherPerfLogs =
+                await _context.TeacherWorkPlanReviewLogs.Where(l => l.PerformedByUserId == userId).ToListAsync();
+            if (otherPerfLogs.Count != 0)
+                _context.TeacherWorkPlanReviewLogs.RemoveRange(otherPerfLogs);
+
+            var activities = await _context.Activities.Where(a => a.TeacherId == userId).ToListAsync();
+            foreach (var act in activities)
+            {
+                var attch = await _context.ActivityAttachments.Where(x => x.ActivityId == act.Id).ToListAsync();
+                if (attch.Count != 0)
+                    _context.ActivityAttachments.RemoveRange(attch);
+                var actScores = await _context.StudentActivityScores.Where(x => x.ActivityId == act.Id).ToListAsync();
+                if (actScores.Count != 0)
+                    _context.StudentActivityScores.RemoveRange(actScores);
+            }
+
+            if (activities.Count != 0)
+                _context.Activities.RemoveRange(activities);
+
+            var discT = await _context.DisciplineReports.Where(d => d.TeacherId == userId).ToListAsync();
+            if (discT.Count != 0)
+                _context.DisciplineReports.RemoveRange(discT);
+
+            var oriT = await _context.OrientationReports.Where(o => o.TeacherId == userId).ToListAsync();
+            if (oriT.Count != 0)
+                _context.OrientationReports.RemoveRange(oriT);
+
+            var attT = await _context.Attendances.Where(a => a.TeacherId == userId).ToListAsync();
+            if (attT.Count != 0)
+                _context.Attendances.RemoveRange(attT);
+        }
     }
-    catch (DbUpdateException dbEx)
+
+    private async Task ClearMessagesForUserAsync(Guid userId)
     {
-        await transaction.RollbackAsync(); 
-        throw new Exception("No se puede eliminar el usuario porque tiene dependencias en otras entidades.", dbEx);
+        await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE messages SET parent_message_id = NULL
+            WHERE parent_message_id IN (
+                SELECT id FROM messages WHERE sender_id = {userId} OR recipient_id = {userId})");
+        await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            DELETE FROM messages WHERE sender_id = {userId} OR recipient_id = {userId}");
     }
-    catch (Exception ex)
+
+    private async Task DeletePrematriculationsForStudentAsync(Guid studentId)
     {
-        await transaction.RollbackAsync();
-        throw new Exception("Error inesperado al eliminar el usuario.", ex);
-    }
+        var premIds = await _context.Prematriculations.Where(p => p.StudentId == studentId).Select(p => p.Id)
+            .ToListAsync();
+        if (premIds.Count == 0)
+            return;
+
+        var payments = await _context.Payments
+            .Where(p => premIds.Contains(p.PrematriculationId))
+            .ToListAsync();
+        if (payments.Count != 0)
+            _context.Payments.RemoveRange(payments);
+
+        var hist =
+            await _context.PrematriculationHistories.Where(h => premIds.Contains(h.PrematriculationId)).ToListAsync();
+        if (hist.Count != 0)
+            _context.PrematriculationHistories.RemoveRange(hist);
+
+        var prems = await _context.Prematriculations.Where(p => premIds.Contains(p.Id)).ToListAsync();
+        if (prems.Count != 0)
+            _context.Prematriculations.RemoveRange(prems);
     }
 
     public async Task<User?> GetByRoleAndSchoolAsync(string role, Guid schoolId)
