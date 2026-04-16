@@ -352,7 +352,9 @@ namespace SchoolManager.Controllers
             int insertadas = 0;
             int duplicadas = 0;
             int estudiantesCreados = 0;
+            int estudiantesActualizados = 0;
             var errores = new List<string>();
+            var currentSchoolId = await GetCurrentUserSchoolId();
 
             foreach (var item in asignaciones)
             {
@@ -360,8 +362,16 @@ namespace SchoolManager.Controllers
                 {
                     Console.WriteLine($"[SaveAssignments] Procesando: {item.Estudiante} - {item.Grado} - {item.Grupo}");
                     
-                    // Buscar o crear el estudiante
+                    // Buscar estudiante existente por email o por documento para evitar duplicados.
                     var student = await _userService.GetByEmailAsync(item.Estudiante);
+                    if (student == null && !string.IsNullOrWhiteSpace(item.DocumentoId))
+                    {
+                        var allStudents = await _userService.GetAllStudentsAsync();
+                        student = allStudents.FirstOrDefault(s =>
+                            !string.IsNullOrWhiteSpace(s.DocumentId) &&
+                            string.Equals(s.DocumentId.Trim(), item.DocumentoId.Trim(), StringComparison.OrdinalIgnoreCase));
+                    }
+
                     if (student == null)
                     {
                         Console.WriteLine($"[SaveAssignments] Estudiante no encontrado, creando: {item.Estudiante}");
@@ -382,7 +392,7 @@ namespace SchoolManager.Controllers
                             Status = "active",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow,
-                            SchoolId = await GetCurrentUserSchoolId(),
+                            SchoolId = currentSchoolId,
                             PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), // Contraseña temporal por defecto hasheada
                             TwoFactorEnabled = false,
                             LastLogin = null,
@@ -398,19 +408,32 @@ namespace SchoolManager.Controllers
                     }
                     else
                     {
-                        Console.WriteLine($"[SaveAssignments] Estudiante encontrado, actualizando campos Inclusivo y Jornada: {item.Estudiante}");
-                        
-                        // Actualizar el campo Inclusivo y Jornada del estudiante existente
+                        Console.WriteLine($"[SaveAssignments] Estudiante encontrado, actualizando datos: {item.Estudiante}");
+
+                        if (!string.IsNullOrWhiteSpace(item.Nombre))
+                            student.Name = item.Nombre.Trim();
+                        if (!string.IsNullOrWhiteSpace(item.Apellido))
+                            student.LastName = item.Apellido.Trim();
+                        if (!string.IsNullOrWhiteSpace(item.Estudiante))
+                            student.Email = item.Estudiante.Trim();
+                        if (!string.IsNullOrWhiteSpace(item.DocumentoId))
+                            student.DocumentId = item.DocumentoId.Trim();
+
+                        student.DateOfBirth = _dateTimeHomologationService.HomologateDateOfBirth(
+                            item.FechaNacimiento,
+                            "StudentAssignment");
                         student.Inclusivo = item.Inclusivo;
-                        if (!string.IsNullOrEmpty(item.Jornada))
-                        {
-                            student.Shift = item.Jornada.Trim();
-                        }
+                        student.Shift = !string.IsNullOrWhiteSpace(item.Jornada) ? item.Jornada.Trim() : null;
+                        student.Role = "estudiante";
+                        student.Status = "active";
+                        if (student.SchoolId == null && currentSchoolId.HasValue)
+                            student.SchoolId = currentSchoolId;
                         student.UpdatedAt = DateTime.UtcNow;
                         
-                        await _userService.UpdateAsync(student, new List<Guid>(), new List<Guid>());
+                        await _userService.UpdateAsync(student);
+                        estudiantesActualizados++;
                         
-                        Console.WriteLine($"[SaveAssignments] Campos Inclusivo y Jornada actualizados para estudiante: {student.Id}, Jornada: {student.Shift}");
+                        Console.WriteLine($"[SaveAssignments] Datos actualizados para estudiante: {student.Id}, Jornada: {student.Shift}");
                     }
 
                     var grade = await _gradeLevelService.GetByNameAsync(item.Grado);
@@ -479,6 +502,7 @@ namespace SchoolManager.Controllers
                 insertadas,
                 duplicadas,
                 estudiantesCreados,
+                estudiantesActualizados,
                 errores,
                 message = "Carga masiva completada."
             });
