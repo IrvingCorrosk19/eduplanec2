@@ -12,7 +12,8 @@ public interface IClubParentsPaymentService
         string? carnetStatus = null,
         string? platformStatus = null,
         string? search = null,
-        string? shift = null);
+        string? shift = null,
+        string? cedula = null);
 
     /// <summary>Estado de carnet y plataforma de un estudiante. Si no hay registro, devuelve Pendiente/Pendiente.</summary>
     Task<StudentPaymentStatusDto> GetStudentPaymentStatusAsync(Guid studentId);

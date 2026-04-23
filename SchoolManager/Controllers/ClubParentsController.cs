@@ -82,15 +82,16 @@ public class ClubParentsController : Controller
         [FromQuery] string? carnetStatus,
         [FromQuery] string? platformStatus,
         [FromQuery] string? search,
-        [FromQuery] string? shift)
+        [FromQuery] string? shift,
+        [FromQuery] string? cedula)
     {
         try
         {
             var userId = await _currentUserService.GetCurrentUserIdAsync();
             var school = await _currentUserService.GetCurrentUserSchoolAsync();
             _logger.LogInformation(
-                "[ClubParents] GetStudents called UserId={UserId} SchoolId={SchoolId} SchoolName={SchoolName} gradeId={GradeId} groupId={GroupId} carnetStatus={CarnetStatus} platformStatus={PlatformStatus} search={Search} shift={Shift}",
-                userId, school?.Id, school?.Name ?? "(null)", gradeId, groupId, carnetStatus, platformStatus, search, shift);
+                "[ClubParents] GetStudents called UserId={UserId} SchoolId={SchoolId} SchoolName={SchoolName} gradeId={GradeId} groupId={GroupId} carnetStatus={CarnetStatus} platformStatus={PlatformStatus} search={Search} shift={Shift} cedula={Cedula}",
+                userId, school?.Id, school?.Name ?? "(null)", gradeId, groupId, carnetStatus, platformStatus, search, shift, cedula);
 
             if (school == null)
             {
@@ -98,7 +99,7 @@ public class ClubParentsController : Controller
                 return Ok(new { data = Array.Empty<ClubParentsStudentDto>(), noSchool = true, message = "Su usuario no tiene una escuela asignada. Asigne la escuela en Usuarios para ver los estudiantes." });
             }
 
-            var list = await _service.GetStudentsAsync(gradeId, groupId, carnetStatus, platformStatus, search, shift);
+            var list = await _service.GetStudentsAsync(gradeId, groupId, carnetStatus, platformStatus, search, shift, cedula);
             _logger.LogInformation("[ClubParents] GetStudents returning {Count} students for SchoolId={SchoolId}", list.Count, school.Id);
             return Ok(new { data = list });
         }

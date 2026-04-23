@@ -35,7 +35,8 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
         string? carnetStatus = null,
         string? platformStatus = null,
         string? search = null,
-        string? shift = null)
+        string? shift = null,
+        string? cedula = null)
     {
         var school = await _currentUserService.GetCurrentUserSchoolAsync();
         if (school == null)
@@ -49,6 +50,7 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
         var platformFilter = string.IsNullOrWhiteSpace(platformStatus) ? null : platformStatus.Trim();
         var searchTerm = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         var shiftFilter = string.IsNullOrWhiteSpace(shift) ? null : shift.Trim();
+        var cedulaFilter = string.IsNullOrWhiteSpace(cedula) ? null : cedula.Trim();
 
         _logger.LogInformation("[ClubParents] GetStudentsAsync querying Users: Role IN (student,estudiante) AND (User.SchoolId={SchoolId} OR asignación activa al colegio)", schoolId);
 
@@ -70,6 +72,17 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
                 || (digitsOnly.Length > 0 && u.DocumentId != null
                     && u.DocumentId.Replace(".", "").Replace("-", "").Replace(" ", "")
                         .Contains(digitsOnly)));
+        }
+
+        if (cedulaFilter != null)
+        {
+            var likeCed = "%" + cedulaFilter + "%";
+            var digitsOnlyCed = new string(cedulaFilter.Where(char.IsDigit).ToArray());
+            userQuery = userQuery.Where(u =>
+                u.DocumentId != null
+                && (EF.Functions.ILike(u.DocumentId, likeCed)
+                    || (digitsOnlyCed.Length > 0
+                        && u.DocumentId.Replace(".", "").Replace("-", "").Replace(" ", "").Contains(digitsOnlyCed))));
         }
 
         if (shiftFilter != null)
