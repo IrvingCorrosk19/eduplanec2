@@ -187,7 +187,7 @@
                         actions.push('<button type="button" class="btn btn-success btn-sm btn-activate-platform" data-id="' + row.id + '" title="Activar plataforma"><i class="fas fa-unlock"></i> Activar plataforma</button>');
                     }
                     tr.innerHTML =
-                        '<td>' + (row.fullName || '') + '</td>' +
+                        '<td class="js-person-name">' + (window.PersonNameDisplay ? PersonNameDisplay.format(row.fullName || '') : (row.fullName || '')) + '</td>' +
                         '<td>' + (row.documentId ? row.documentId : '—') + '</td>' +
                         '<td>' + (row.grade || '') + '</td>' +
                         '<td>' + (row.group || '') + '</td>' +

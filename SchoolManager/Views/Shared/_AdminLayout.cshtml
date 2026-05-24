@@ -6,7 +6,9 @@
     var userRole = (await CurrentUserService.GetCurrentUserRoleAsync())?.ToLower() ?? "";
     var userSchool = await CurrentUserService.GetCurrentUserSchoolAsync();
     var currentUser = await CurrentUserService.GetCurrentUserAsync();
-    var fullName = currentUser != null ? $"{currentUser.Name} {currentUser.LastName}" : userName;
+    var fullName = currentUser != null
+        ? DisplayNameHelper.FormatFullName(currentUser.Name, currentUser.LastName)
+        : DisplayNameHelper.FormatFullName(userName);
     var portalMenuProfile = PortalRoleAccessRules.GetMenuProfile(userRole);
     var isPortalRestrictedMenu = portalMenuProfile != PortalRoleAccessRules.PortalMenuProfile.Full;
     var portalBrandUrl = isPortalRestrictedMenu ? PortalRoleAccessRules.GetDefaultLandingPath(userRole) : "/";
@@ -704,6 +706,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
     <script src="~/js/ui-messages.js" asp-append-version="true"></script>
+    <script src="~/js/person-name-display.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 

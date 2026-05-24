@@ -717,7 +717,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h3 class="mb-0">📘 Portal del Docente</h3>
-                <small>@Model.Teacher.FullName – @Model.Teacher.Email</small>
+                <small><span class="js-person-name">@Model.Teacher.FullName</span> – @Model.Teacher.Email</small>
             </div>
             <div class="text-end">
                 <p class="mb-0 opacity-75">@TimeZoneService.GetTodayLongString()</p>
@@ -1579,7 +1579,8 @@
         function formatName(fullName) {
             if (!fullName) return '(Sin nombre)';
             const trimmed = fullName.trim();
-            return trimmed || '(Sin nombre)';
+            if (!trimmed) return '(Sin nombre)';
+            return window.PersonNameDisplay ? PersonNameDisplay.format(trimmed) : trimmed;
         }
 
         function escapeAttr(text) {

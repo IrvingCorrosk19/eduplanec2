@@ -249,7 +249,13 @@ $(function(){
                     return '<img src="' + src + '" class="rounded idcard-student-thumb" width="44" height="44" alt="" loading="lazy" />';
                 }
             },
-            { data: 'fullName', title: 'Estudiante' },
+            {
+                data: 'fullName',
+                title: 'Estudiante',
+                render: function (data) {
+                    return window.PersonNameDisplay ? PersonNameDisplay.format(data || '') : (data || '');
+                }
+            },
             { data: 'grade', title: 'Grado' },
             { data: 'group', title: 'Grupo' },
             { data: 'shift', title: 'Jornada' },

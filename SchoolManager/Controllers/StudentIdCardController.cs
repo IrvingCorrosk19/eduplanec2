@@ -205,7 +205,7 @@ public class StudentIdCardController : Controller
 
         var vm = new CarnetPublicEmergencyInfoVm
         {
-            FullName = $"{row.Name} {row.LastName}".Trim(),
+            FullName = DisplayNameHelper.FormatFullName(row.Name, row.LastName),
             DocumentId = row.DocumentId,
             Email = row.Email,
             DateOfBirthDisplay = dob,
@@ -555,7 +555,7 @@ public class StudentIdCardController : Controller
             .Select(x => new
             {
                 x.id,
-                x.fullName,
+                fullName = DisplayNameHelper.FormatFullName(x.fullName),
                 x.photoUrl,
                 x.grade,
                 x.group,

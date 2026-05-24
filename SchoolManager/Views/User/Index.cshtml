@@ -631,8 +631,8 @@
                         @foreach (var user in Model)
                         {
                             <tr>
-                            <td>@user.Name</td>
-                            <td>@user.LastName</td>
+                            <td class="js-person-name">@user.Name</td>
+                            <td class="js-person-name">@user.LastName</td>
                             <td>@user.Email</td>
                             <td>@(user.DateOfBirth?.ToString("dd/MM/yyyy"))</td>
                             <td>@user.DocumentId</td>

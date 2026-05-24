@@ -242,7 +242,7 @@ public class StudentIdCardPdfService : IStudentIdCardPdfService
             return new StudentCardRenderDto
             {
                 StudentId              = studentId,
-                FullName               = $"{student.Name} {student.LastName}",
+                FullName               = DisplayNameHelper.FormatFullName(student.Name, student.LastName),
                 DocumentId             = student.DocumentId,
                 Grade                  = assignment.Grade?.Name ?? "",
                 Group                  = assignment.Group?.Name ?? "",

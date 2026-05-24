@@ -1259,10 +1259,13 @@
         // Función helper global para formatear nombres como "Apellido, Nombre"
         function formatName(fullName) {
             if (!fullName) return '(Sin nombre)';
-            const nameParts = fullName.split(' ');
-            return nameParts.length > 1 
+            const trimmed = fullName.trim();
+            if (!trimmed) return '(Sin nombre)';
+            const formatted = window.PersonNameDisplay ? PersonNameDisplay.format(trimmed) : trimmed;
+            const nameParts = formatted.split(' ');
+            return nameParts.length > 1
                 ? `${nameParts[nameParts.length - 1]}, ${nameParts.slice(0, -1).join(' ')}`
-                : fullName;
+                : formatted;
         }
 
         $(document).ready(() => {

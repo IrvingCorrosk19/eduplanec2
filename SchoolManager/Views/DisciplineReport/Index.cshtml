@@ -63,7 +63,7 @@
                                     {
                                         <tr>
                                             <td>@TimeZoneService.ToLocalDisplayString(report.Date, "dd/MM/yyyy")</td>
-                                            <td><strong>@(report.Student?.Name ?? "N/A")</strong></td>
+                                            <td><strong class="js-person-name">@(report.Student?.Name ?? "N/A")</strong></td>
                                             <td>
                                                 <span class="badge bg-info">@report.ReportType</span>
                                             </td>

@@ -151,7 +151,7 @@
                             <td>
                                 <img src="@UserPhotoLinks.HrefListThumbnail(row.PhotoUrl)" alt="Foto @row.FullName" class="student-thumb" loading="lazy" decoding="async" />
                             </td>
-                            <td>@row.FullName</td>
+                            <td><span class="js-person-name">@row.FullName</span></td>
                             <td>@(string.IsNullOrWhiteSpace(row.DocumentId) ? "—" : row.DocumentId)</td>
                             <td><small>@row.Email</small></td>
                             <td>@(string.IsNullOrWhiteSpace(row.SchoolName) ? "—" : row.SchoolName)</td>

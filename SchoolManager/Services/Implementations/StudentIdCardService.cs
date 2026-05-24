@@ -109,7 +109,7 @@ public class StudentIdCardService : IStudentIdCardService
         {
             StudentId = studentId,
             CardNumber = card.CardNumber,
-            FullName = $"{row.Name} {row.LastName}",
+            FullName = DisplayNameHelper.FormatFullName(row.Name, row.LastName),
             Grade = row.Grade ?? "",
             Group = row.Group ?? "",
             Shift = string.IsNullOrEmpty(row.ShiftName) ? "N/A" : row.ShiftName,
@@ -233,7 +233,7 @@ public class StudentIdCardService : IStudentIdCardService
             {
                 StudentId = studentId,
                 CardNumber = cardNumber,
-                FullName = $"{student.Name} {student.LastName}",
+                FullName = DisplayNameHelper.FormatFullName(student.Name, student.LastName),
                 Grade = activeAssignment.Grade?.Name ?? "",
                 Group = activeAssignment.Group?.Name ?? "",
                 Shift = activeAssignment.Shift?.Name ?? "N/A",

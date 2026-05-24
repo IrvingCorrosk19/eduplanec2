@@ -2,7 +2,7 @@
 @{
     Layout = "_SuperAdminLayout";
     var hasCard = Model.HasActiveCard;
-    ViewData["Title"] = Model.StudentNotFound ? "Carnet" : (hasCard ? "Carnet — " + Model.Card!.FullName : "Generar Carnet");
+    ViewData["Title"] = Model.StudentNotFound ? "Carnet" : (hasCard ? "Carnet — " + DisplayNameHelper.FormatFullName(Model.Card!.FullName) : "Generar Carnet");
     var isVertical = string.Equals(Model.Orientation, "Vertical", StringComparison.OrdinalIgnoreCase);
     var primary = Model.PrimaryColor;
     var bg = Model.BackgroundColor;
@@ -536,7 +536,7 @@
 
                             @* ZONA 3: Datos centrados — jerarquía tipográfica clara *@
                             <div class="idcard-data-center idcard-z1">
-                                <div class="idcard-student-name" style="font-size:9pt;font-weight:700;color:@text;line-height:1.15;max-width:100%">@Model.Card!.FullName</div>
+                                <div class="idcard-student-name" style="font-size:9pt;font-weight:700;color:@text;line-height:1.15;max-width:100%">@Html.PersonFullName(Model.Card!.FullName)</div>
                                 @if (Model.ShowDocumentId && !string.IsNullOrWhiteSpace(Model.DocumentId))
                                 {
                                     <div class="idcard-student-document" style="font-size:6.5pt;color:@text">Cédula: @Model.DocumentId</div>

@@ -28,7 +28,7 @@
                                     <table class="table table-borderless">
                                         <tr>
                                             <td><strong>Nombre:</strong></td>
-                                            <td>@currentUser.Name @currentUser.LastName</td>
+                                            <td>@Html.PersonFullName(currentUser.Name, currentUser.LastName)</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Email:</strong></td>

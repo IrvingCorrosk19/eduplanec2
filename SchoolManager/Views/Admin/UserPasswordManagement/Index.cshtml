@@ -143,7 +143,7 @@
                             <tbody>
                                 @foreach (var u in Model.Users)
                                 {
-                                    var name = $"{u.FirstName} {u.LastName}".Trim();
+                                    var name = DisplayNameHelper.FormatFullName(u.FirstName, u.LastName);
                                     if (string.IsNullOrEmpty(name)) { name = u.Email; }
                                     <tr data-id="@u.Id">
                                         <td><input type="checkbox" class="user-select-cb" value="@u.Id" /></td>

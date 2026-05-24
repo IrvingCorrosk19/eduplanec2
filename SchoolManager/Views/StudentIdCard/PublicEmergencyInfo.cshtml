@@ -1,5 +1,6 @@
 @model SchoolManager.ViewModels.CarnetPublicEmergencyInfoVm
 @using SchoolManager.Helpers
+@using SchoolManager.Extensions
 @{
     Layout = null;
     ViewData["Title"] = "Información de emergencia";
@@ -75,7 +76,7 @@
             </div>
             <dl>
                 <dt>Nombre completo</dt>
-                <dd>@Model.FullName</dd>
+                <dd><span class="js-person-name">@Model.FullName</span></dd>
                 <dt>Estado del estudiante (cuenta)</dt>
                 <dd>
                     @if (Model.IsUserAccountActive)
@@ -152,5 +153,6 @@
         </div>
         <div class="foot">Información proporcionada por la institución educativa. Si este enlace no corresponde, ignore la página.</div>
     </div>
+    <script src="~/js/person-name-display.js" asp-append-version="true"></script>
 </body>
 </html>
