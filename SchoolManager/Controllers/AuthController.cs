@@ -65,6 +65,11 @@ namespace SchoolManager.Controllers
                 return RedirectToAction("Students", "ClubParents");
             }
 
+            if (roleLower == "admin")
+            {
+                return RedirectToAction("Index", "User");
+            }
+
             if (roleLower is "teacher" or "docente" or "student" or "estudiante")
             {
                 return RedirectToAction("Inbox", "Messaging");

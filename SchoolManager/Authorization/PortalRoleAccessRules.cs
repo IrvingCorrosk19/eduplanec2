@@ -4,13 +4,14 @@ namespace SchoolManager.Authorization;
 
 /// <summary>
 /// Reglas de navegación y acceso por rol en el portal (_AdminLayout).
-/// Mensajería: todos los autenticados. /User: solo admin y director.
+/// Mensajería: todos excepto admin escolar (solo /User). /User: admin y director.
 /// </summary>
 public static class PortalRoleAccessRules
 {
     public enum PortalMenuProfile
     {
         Full,
+        UserManagementOnly,
         MessagingOnly,
         ClubParentsAndMessaging
     }
@@ -35,7 +36,6 @@ public static class PortalRoleAccessRules
         "Login", "Logout", "AccessDenied"
     };
 
-    /// <summary>Estudiante con plataforma pendiente (redirección del filtro existente).</summary>
     private static readonly HashSet<string> AllowedStudentPlatformActions = new(StringComparer.OrdinalIgnoreCase)
     {
         "AccessPending"
@@ -62,6 +62,8 @@ public static class PortalRoleAccessRules
     {
         if (string.IsNullOrWhiteSpace(role)) return PortalMenuProfile.Full;
         var r = role.Trim();
+        if (string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase))
+            return PortalMenuProfile.UserManagementOnly;
         if (string.Equals(r, "clubparentsadmin", StringComparison.OrdinalIgnoreCase))
             return PortalMenuProfile.ClubParentsAndMessaging;
         if (MessagingOnlyRoles.Contains(r))
@@ -75,10 +77,6 @@ public static class PortalRoleAccessRules
     public static bool ShouldHandleAccessDeniedWithoutRedirect(string? role) =>
         UsesRestrictedSidebar(role);
 
-    /// <summary>
-    /// Roles con menú reducido: el filtro valida rutas permitidas.
-    /// admin, director y demás roles de gestión no pasan por aquí.
-    /// </summary>
     public static bool RequiresPortalRouteRestriction(string? role) =>
         UsesRestrictedSidebar(role);
 
@@ -87,21 +85,7 @@ public static class PortalRoleAccessRules
         var controllerName = controller?.Trim() ?? string.Empty;
         var actionName = action?.Trim() ?? string.Empty;
         var pathValue = NormalizePath(path.Value);
-
-        if (string.Equals(controllerName, "Messaging", StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (pathValue.StartsWith("/messaging", StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (string.Equals(controllerName, "User", StringComparison.OrdinalIgnoreCase)
-            || pathValue.StartsWith("/user", StringComparison.OrdinalIgnoreCase))
-            return CanAccessUserManagement(role);
-
         var profile = GetMenuProfile(role);
-
-        if (profile == PortalMenuProfile.Full)
-            return true;
 
         if (string.Equals(controllerName, "Auth", StringComparison.OrdinalIgnoreCase)
             && AllowedAuthActions.Contains(actionName))
@@ -110,6 +94,20 @@ public static class PortalRoleAccessRules
         if (string.Equals(controllerName, "File", StringComparison.OrdinalIgnoreCase)
             && AllowedFileActions.Contains(actionName))
             return true;
+
+        if (string.Equals(controllerName, "User", StringComparison.OrdinalIgnoreCase)
+            || pathValue.StartsWith("/user", StringComparison.OrdinalIgnoreCase))
+            return CanAccessUserManagement(role);
+
+        if (profile == PortalMenuProfile.Full)
+            return true;
+
+        if (profile == PortalMenuProfile.UserManagementOnly)
+            return false;
+
+        if (string.Equals(controllerName, "Messaging", StringComparison.OrdinalIgnoreCase)
+            || pathValue.StartsWith("/messaging", StringComparison.OrdinalIgnoreCase))
+            return profile is PortalMenuProfile.MessagingOnly or PortalMenuProfile.ClubParentsAndMessaging;
 
         if (profile == PortalMenuProfile.MessagingOnly)
         {
@@ -135,6 +133,7 @@ public static class PortalRoleAccessRules
     {
         return GetMenuProfile(role) switch
         {
+            PortalMenuProfile.UserManagementOnly => "/User/Index",
             PortalMenuProfile.ClubParentsAndMessaging => "/ClubParents/Students",
             PortalMenuProfile.MessagingOnly => "/Messaging/Inbox",
             _ => "/Home/Index"
