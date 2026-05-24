@@ -247,6 +247,15 @@
         gap: 6px;
     }
 
+    /* Franja gris inferior completa: sube si el nombre ocupa más de una línea (ajuste vía script) */
+    .idcard-bottom-footer {
+        transition: transform 0s;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--raised {
+        transform: translateY(calc(-1 * var(--idcard-footer-raise, 18px)));
+    }
+
     .idcard-policy-section .policy-text {
         flex: 1;
         min-width: 0;
@@ -298,7 +307,7 @@
 
     /* QR de emergencia (URL https → /StudentIdCard/public/emergency-info), antes en el reverso */
     .idcard-policy-section .policy-emergency-qr,
-    .idcard-policy-section .policy-emergency-scan.idcard-bottom-qr {
+    .idcard-policy-section .policy-emergency-scan {
         flex-shrink: 0;
         width: 58px;
         min-width: 58px;
@@ -307,15 +316,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-    }
-
-    /* Solo el QR inferior: sube si el nombre ocupa más de una línea (ajuste vía script) */
-    .idcard-bottom-qr {
-        transition: transform 0s;
-    }
-
-    .idcard-bottom-qr.idcard-bottom-qr--raised {
-        transform: translateY(calc(-1 * var(--idcard-qr-raise, 18px)));
     }
 
     .idcard-policy-section .policy-emergency-qr img {
@@ -517,7 +517,7 @@
                             <div class="idcard-spacer"></div>
 
                             @* ZONA 4+5: Bloque unificado — Póliza + aviso emergencia (flush con bordes) *@
-                            <div class="idcard-policy-section idcard-z1">
+                            <div class="idcard-policy-section idcard-bottom-footer idcard-z1">
                                 <div class="policy-text">
                                     @if (showFrontPolicy)
                                     {
@@ -531,14 +531,14 @@
                                 </div>
                                 @if (hasEmergencyQr)
                                 {
-                                    <div class="policy-emergency-qr idcard-bottom-qr" aria-label="Escanéame en caso de emergencia">
+                                    <div class="policy-emergency-qr" aria-label="Escanéame en caso de emergencia">
                                         <img src="@Model.Card!.EmergencyInfoQrImageDataUrl" alt="QR datos de emergencia" />
                                         <div class="policy-emergency-caption">Escanéame en caso de emergencia</div>
                                     </div>
                                 }
                                 else if (Model.ShowQr)
                                 {
-                                    <div class="policy-emergency-scan idcard-bottom-qr" aria-label="Escanéame en caso de emergencia">
+                                    <div class="policy-emergency-scan" aria-label="Escanéame en caso de emergencia">
                                         <i class="fas fa-qrcode policy-emergency-icon" aria-hidden="true"></i>
                                         <span class="policy-emergency-line1">Escanéame</span>
                                         <span class="policy-emergency-line2">en caso de</span>
@@ -574,11 +574,11 @@
         root = root || document.getElementById('idCardFront');
         if (!root) return;
         var nameEl = root.querySelector('.idcard-student-name');
-        var qrEl = root.querySelector('.idcard-bottom-qr');
-        if (!nameEl || !qrEl) return;
+        var footerEl = root.querySelector('.idcard-bottom-footer');
+        if (!nameEl || !footerEl) return;
 
-        qrEl.classList.remove('idcard-bottom-qr--raised');
-        qrEl.style.removeProperty('--idcard-qr-raise');
+        footerEl.classList.remove('idcard-bottom-footer--raised');
+        footerEl.style.removeProperty('--idcard-footer-raise');
 
         var style = window.getComputedStyle(nameEl);
         var lineHeight = parseFloat(style.lineHeight);
@@ -591,8 +591,8 @@
 
         var extra = nameH - lineHeight;
         var shift = Math.min(22, Math.max(15, Math.round(extra * 0.9)));
-        qrEl.style.setProperty('--idcard-qr-raise', shift + 'px');
-        qrEl.classList.add('idcard-bottom-qr--raised');
+        footerEl.style.setProperty('--idcard-footer-raise', shift + 'px');
+        footerEl.classList.add('idcard-bottom-footer--raised');
     };
 
     (function () {

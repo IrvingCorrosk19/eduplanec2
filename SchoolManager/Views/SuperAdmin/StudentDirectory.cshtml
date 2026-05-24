@@ -179,17 +179,29 @@
                                 }
                             </td>
                             <td>
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary btn-photo-manage"
-                                        data-user-id="@row.UserId"
-                                        data-full-name="@row.FullName"
-                                        data-document-id="@row.DocumentId"
-                                        data-grade="@(row.GradeLevelName ?? "Sin matrícula")"
-                                        data-group="@(row.GroupName ?? "Sin grupo")"
-                                        data-shift="@(row.ShiftName ?? row.UserShift ?? "Sin jornada")"
-                                        data-photo-url="@row.PhotoUrl">
-                                    <i class="fas fa-camera me-1"></i> Tomar/Subir
-                                </button>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary btn-photo-manage"
+                                            data-user-id="@row.UserId"
+                                            data-full-name="@row.FullName"
+                                            data-document-id="@row.DocumentId"
+                                            data-grade="@(row.GradeLevelName ?? "Sin matrícula")"
+                                            data-group="@(row.GroupName ?? "Sin grupo")"
+                                            data-shift="@(row.ShiftName ?? row.UserShift ?? "Sin jornada")"
+                                            data-photo-url="@row.PhotoUrl">
+                                        <i class="fas fa-camera me-1"></i> Tomar/Subir
+                                    </button>
+                                    @if (!string.IsNullOrWhiteSpace(row.PhotoUrl))
+                                    {
+                                        <a asp-action="StudentDirectoryDownloadPhoto"
+                                           asp-route-userId="@row.UserId"
+                                           class="btn btn-sm btn-outline-success"
+                                           title="Descargar foto"
+                                           download>
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
@@ -292,6 +304,9 @@
                     <button type="button" id="btnChoosePhoto" class="btn btn-outline-secondary">
                         <i class="fas fa-image me-1"></i> Elegir desde galería
                     </button>
+                    <a href="#" id="btnDownloadStudentPhoto" class="btn btn-outline-success disabled" aria-disabled="true" tabindex="-1">
+                        <i class="fas fa-download me-1"></i> Descargar foto
+                    </a>
                 </div>
                 <input type="file"
                        id="studentPhotoInput"
@@ -344,6 +359,7 @@
             var meta = document.getElementById('studentPhotoMeta');
             var btnSave = document.getElementById('btnSaveStudentPhoto');
             var btnRemove = document.getElementById('btnRemoveStudentPhoto');
+            var btnDownload = document.getElementById('btnDownloadStudentPhoto');
             var btnSync = document.getElementById('btnSyncOfflinePhotos');
             var queueBadge = document.getElementById('offlineQueueBadge');
             var networkBadge = document.getElementById('networkStateBadge');
@@ -387,12 +403,34 @@
                 }
             }
 
+            function setDownloadLink(userId, hasPhoto) {
+                if (!btnDownload) return;
+                if (hasPhoto && userId) {
+                    btnDownload.href = '/SuperAdmin/StudentDirectoryDownloadPhoto?userId=' + encodeURIComponent(userId);
+                    btnDownload.classList.remove('disabled');
+                    btnDownload.removeAttribute('aria-disabled');
+                    btnDownload.removeAttribute('tabindex');
+                } else {
+                    btnDownload.href = '#';
+                    btnDownload.classList.add('disabled');
+                    btnDownload.setAttribute('aria-disabled', 'true');
+                    btnDownload.setAttribute('tabindex', '-1');
+                }
+            }
+
             function setPreview(stored) {
                 currentPhotoUrl = stored || '';
-                previewImg.src = buildUserPhotoHref(stored);
-                previewImg.style.display = '';
-                previewPlaceholder.style.display = 'none';
+                if (currentPhotoUrl) {
+                    previewImg.src = buildUserPhotoHref(stored);
+                    previewImg.style.display = '';
+                    previewPlaceholder.style.display = 'none';
+                } else {
+                    previewImg.src = '';
+                    previewImg.style.display = 'none';
+                    previewPlaceholder.style.display = '';
+                }
                 btnRemove.disabled = !currentPhotoUrl;
+                setDownloadLink(currentStudentId, !!currentPhotoUrl);
             }
 
             function applyThumbToTable(userId, stored) {
@@ -403,7 +441,29 @@
                 if (!row) return;
                 var thumbCell = row.children[0];
                 if (!thumbCell) return;
-                thumbCell.innerHTML = '<img src="' + buildUserPhotoThumbHref(stored) + '" alt="Foto estudiante" class="student-thumb" loading="lazy" decoding="async" />';
+                if (stored) {
+                    thumbCell.innerHTML = '<img src="' + buildUserPhotoThumbHref(stored) + '" alt="Foto estudiante" class="student-thumb" loading="lazy" decoding="async" />';
+                } else {
+                    thumbCell.innerHTML = '<div class="student-thumb-placeholder"><i class="fas fa-user"></i></div>';
+                }
+                var actionsCell = btn.parentElement;
+                if (!actionsCell) return;
+                var existingDl = actionsCell.querySelector('a[href*="StudentDirectoryDownloadPhoto"]');
+                if (stored) {
+                    if (!existingDl) {
+                        var dl = document.createElement('a');
+                        dl.className = 'btn btn-sm btn-outline-success';
+                        dl.title = 'Descargar foto';
+                        dl.setAttribute('download', '');
+                        dl.href = '/SuperAdmin/StudentDirectoryDownloadPhoto?userId=' + encodeURIComponent(userId);
+                        dl.innerHTML = '<i class="fas fa-download"></i>';
+                        actionsCell.appendChild(dl);
+                    } else {
+                        existingDl.href = '/SuperAdmin/StudentDirectoryDownloadPhoto?userId=' + encodeURIComponent(userId);
+                    }
+                } else if (existingDl) {
+                    existingDl.remove();
+                }
             }
 
             function applyPendingToRow(userId, pending) {
