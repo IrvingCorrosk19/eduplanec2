@@ -1,2 +1,15 @@
-@* Docentes y estudiantes: solo Mensajería *@
+@using SchoolManager.Authorization
+@inject SchoolManager.Services.Interfaces.ICurrentUserService CurrentUserService
+@{
+    var sidebarRole = ((await CurrentUserService.GetCurrentUserRoleAsync()) ?? "").Trim().ToLowerInvariant();
+}
 @await Html.PartialAsync("_MessagingSidebar")
+@if (PortalRoleAccessRules.IsStudentRole(sidebarRole))
+{
+<li class="nav-item">
+    <a href="@Url.Action("Index", "StudentProfile")" class="nav-link">
+        <i class="nav-icon fas fa-user-edit"></i>
+        <p>Mi Perfil</p>
+    </a>
+</li>
+}

@@ -26,9 +26,15 @@ public static class PortalRoleAccessRules
         "admin", "director"
     };
 
+    private static readonly HashSet<string> StudentRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "student", "estudiante"
+    };
+
     private static readonly HashSet<string> AllowedFileActions = new(StringComparer.OrdinalIgnoreCase)
     {
-        "GetSchoolLogo"
+        "GetSchoolLogo",
+        "GetUserPhoto"
     };
 
     private static readonly HashSet<string> AllowedAuthActions = new(StringComparer.OrdinalIgnoreCase)
@@ -57,6 +63,9 @@ public static class PortalRoleAccessRules
 
     public static bool CanAccessUserManagement(string? role) =>
         !string.IsNullOrWhiteSpace(role) && UserManagementRoles.Contains(role.Trim());
+
+    public static bool IsStudentRole(string? role) =>
+        !string.IsNullOrWhiteSpace(role) && StudentRoles.Contains(role.Trim());
 
     public static PortalMenuProfile GetMenuProfile(string? role)
     {
@@ -111,6 +120,11 @@ public static class PortalRoleAccessRules
 
         if (profile == PortalMenuProfile.MessagingOnly)
         {
+            if (IsStudentRole(role)
+                && (string.Equals(controllerName, "StudentProfile", StringComparison.OrdinalIgnoreCase)
+                    || pathValue.StartsWith("/studentprofile", StringComparison.OrdinalIgnoreCase)))
+                return true;
+
             if (string.Equals(controllerName, "Student", StringComparison.OrdinalIgnoreCase)
                 && AllowedStudentPlatformActions.Contains(actionName))
                 return true;
