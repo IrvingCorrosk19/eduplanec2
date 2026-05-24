@@ -138,14 +138,9 @@ public class StudentIdCardPdfService : IStudentIdCardPdfService
             IReadOnlyList<IdCardTemplateField>? customFields = fields.Count > 0 ? fields : null;
 
             var frontPng = _imageService.GenerateCardImage(renderDto, settings, customFields);
-            byte[]? backPng = (settings.ShowQr && customFields == null)
-                ? _imageService.GenerateCardBackImage(renderDto, settings)
-                : null;
 
-            // 7. PDF wrapper — solo embebe imágenes PNG en página de tamaño CR80 exacto
+            // 7. PDF wrapper — una sola cara (frente únicamente)
             var (widthMm, heightMm) = _imageService.GetCardMmDimensions(settings);
-            float pageW = backPng != null ? widthMm * 2f + 2f : widthMm;
-            float pageH = heightMm;
 
             QuestPDF.Settings.License       = LicenseType.Community;
             QuestPDF.Settings.EnableDebugging = false;
@@ -154,22 +149,9 @@ public class StudentIdCardPdfService : IStudentIdCardPdfService
             {
                 container.Page(page =>
                 {
-                    page.Size(pageW, pageH, Unit.Millimetre);
+                    page.Size(widthMm, heightMm, Unit.Millimetre);
                     page.Margin(0);
-
-                    if (backPng != null)
-                    {
-                        page.Content().Row(row =>
-                        {
-                            row.Spacing(2f, Unit.Millimetre);
-                            row.ConstantItem(widthMm, Unit.Millimetre).Image(frontPng).FitArea();
-                            row.ConstantItem(widthMm, Unit.Millimetre).Image(backPng).FitArea();
-                        });
-                    }
-                    else
-                    {
-                        page.Content().Image(frontPng).FitArea();
-                    }
+                    page.Content().Image(frontPng).FitArea();
                 });
             }).GeneratePdf();
 

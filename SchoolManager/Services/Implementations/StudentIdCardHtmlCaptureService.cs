@@ -37,22 +37,21 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
         var launchOpts = BuildLaunchOptions(executablePath);
 
         byte[] frontImg;
-        byte[]? backImg;
         await using (var browser = await Puppeteer.LaunchAsync(launchOpts))
         {
             try
             {
-                (frontImg, backImg) = await CaptureCardFacesAsync(browser, url);
+                frontImg = await CaptureCardFrontAsync(browser, url);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[CardPdf] First capture attempt failed. Retrying once...");
                 await Task.Delay(500);
-                (frontImg, backImg) = await CaptureCardFacesAsync(browser, url);
+                frontImg = await CaptureCardFrontAsync(browser, url);
             }
         }
 
-        return BuildPdfFromFaceImages(frontImg, backImg);
+        return BuildPdfFromFaceImages(frontImg);
     }
 
     public async Task<IReadOnlyList<byte[]>> GenerateBulkFromUrls(IReadOnlyList<string> urls)
@@ -72,19 +71,18 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
             try
             {
                 byte[] frontImg;
-                byte[]? backImg;
                 try
                 {
-                    (frontImg, backImg) = await CaptureCardFacesAsync(browser, url);
+                    frontImg = await CaptureCardFrontAsync(browser, url);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "[CardPdf] Bulk capture failed for {Url}, retry once", url);
                     await Task.Delay(400);
-                    (frontImg, backImg) = await CaptureCardFacesAsync(browser, url);
+                    frontImg = await CaptureCardFrontAsync(browser, url);
                 }
 
-                results.Add(BuildPdfFromFaceImages(frontImg, backImg));
+                results.Add(BuildPdfFromFaceImages(frontImg));
             }
             catch (Exception ex)
             {
@@ -122,7 +120,7 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
         }
     }
 
-    private byte[] BuildPdfFromFaceImages(byte[] frontImg, byte[]? backImg)
+    private byte[] BuildPdfFromFaceImages(byte[] frontImg)
     {
         var pageSize = ResolvePageSize();
         QuestPDF.Settings.License         = LicenseType.Community;
@@ -136,16 +134,6 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
                 p.Margin(0);
                 p.Content().Image(frontImg).FitArea();
             });
-
-            if (backImg != null)
-            {
-                container.Page(p =>
-                {
-                    p.Size(pageSize.WidthMm, pageSize.HeightMm, Unit.Millimetre);
-                    p.Margin(0);
-                    p.Content().Image(backImg).FitArea();
-                });
-            }
         }).GeneratePdf();
     }
 
@@ -158,7 +146,7 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
             Args           = BuildLaunchArgs()
         };
 
-    private async Task<(byte[] Front, byte[]? Back)> CaptureCardFacesAsync(IBrowser browser, string url)
+    private async Task<byte[]> CaptureCardFrontAsync(IBrowser browser, string url)
     {
         await using var page = await browser.NewPageAsync();
         var pageSize = ResolvePageSize();
@@ -218,12 +206,7 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
             }
         }
 
-        var allFaces = await page.QuerySelectorAllAsync(".idcard-face");
-        var back     = allFaces.Length > 1 ? allFaces[1] : null;
-
-        var frontImg = await Capture(front, pageSize.WidthPx, pageSize.HeightPx);
-        var backImg  = back != null ? await Capture(back, pageSize.WidthPx, pageSize.HeightPx) : null;
-        return (frontImg, backImg);
+        return await Capture(front, pageSize.WidthPx, pageSize.HeightPx);
     }
 
     private static Task SetCaptureViewportAsync(IPage page, (float WidthMm, float HeightMm, int WidthPx, int HeightPx) pageSize, int dpr) =>

@@ -141,7 +141,7 @@ public class StudentIdCardController : Controller
 
     /// <summary>
     /// Página pública lectora (cualquier teléfono): datos de emergencia e información personal.
-    /// Enlace firmado en el segundo QR del reverso del carnet.
+    /// Enlace firmado para la página pública de datos de emergencia (tokens sin cambios).
     /// </summary>
     [AllowAnonymous]
     [EnableRateLimiting("ScanApiPolicy")]
@@ -233,7 +233,7 @@ public class StudentIdCardController : Controller
     public IActionResult Scan() => View();
 
     /// <summary>
-    /// Descarga del PDF del carnet (frente/reverso según configuración). Errores en texto plano para que fetch en la vista pueda mostrarlos.
+    /// Descarga del PDF del carnet (una sola cara — frente). Errores en texto plano para que fetch en la vista pueda mostrarlos.
     /// </summary>
     [HttpGet("ui/print/{studentId}")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]

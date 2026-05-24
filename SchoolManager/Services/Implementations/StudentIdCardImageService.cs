@@ -252,13 +252,12 @@ public class StudentIdCardImageService : IStudentIdCardImageService
         using (var p = Fill(new SKColor(230, 238, 247)))
             canvas.DrawRect(0, bottomZoneTop, w, bottomZH, p);
 
-        float qrSz = bottomZH * 0.55f;
-        float qrX  = w - hPad - qrSz;
-        float qrY  = bottomZoneTop + (bottomZH - qrSz) / 2f;
-        if (settings.ShowQr)
-            DrawQr(canvas, dto.QrToken, SKRect.Create(qrX, qrY, qrSz, qrSz));
+        float promptSz = bottomZH * 0.55f;
+        float promptX  = w - hPad - promptSz;
+        float promptY  = bottomZoneTop + (bottomZH - promptSz) / 2f;
+        DrawEmergencyScanPrompt(canvas, SKRect.Create(promptX, promptY, promptSz, promptSz), primary, textCol);
 
-        float leftW    = qrX - hPad * 2f;
+        float leftW    = promptX - hPad * 2f;
         float polFs    = h * 0.022f;
         float polIdFs  = h * 0.025f;
         float lty      = bottomZoneTop + bottomZH * 0.18f;
@@ -550,6 +549,38 @@ public class StudentIdCardImageService : IStudentIdCardImageService
     // ══════════════════════════════════════════════════════════════════════════
     // PRIMITIVOS
     // ══════════════════════════════════════════════════════════════════════════
+    /// <summary>Bloque visual donde iba el QR inferior del frente (texto de emergencia).</summary>
+    private static void DrawEmergencyScanPrompt(SKCanvas canvas, SKRect dest, SKColor primary, SKColor textCol)
+    {
+        using (var fill = Fill(new SKColor(255, 255, 255, 230)))
+            canvas.DrawRoundRect(dest, 4f, 4f, fill);
+        using (var border = Stroke(primary, Math.Max(1f, dest.Width * 0.04f)))
+            canvas.DrawRoundRect(dest, 4f, 4f, border);
+
+        float pad = dest.Width * 0.08f;
+        float innerW = dest.Width - pad * 2f;
+        float line1Fs = dest.Height * 0.16f;
+        float line2Fs = dest.Height * 0.13f;
+        float y = dest.Top + dest.Height * 0.22f;
+
+        using var iconPaint = new SKPaint
+        {
+            Color = primary,
+            IsAntialias = true,
+            TextSize = dest.Height * 0.22f,
+            Typeface = SKTypeface.FromFamilyName("Segoe UI Symbol", SKFontStyle.Bold),
+            TextAlign = SKTextAlign.Center
+        };
+        canvas.DrawText("⌗", dest.MidX, y + iconPaint.TextSize * 0.85f, iconPaint);
+        y += dest.Height * 0.28f;
+
+        AutoText(canvas, "Escanéame", dest.Left + pad, y, innerW, line1Fs, primary, bold: true, center: true);
+        y += line1Fs * 1.15f;
+        AutoText(canvas, "en caso de", dest.Left + pad, y, innerW, line2Fs, textCol, center: true);
+        y += line2Fs * 1.1f;
+        AutoText(canvas, "emergencia", dest.Left + pad, y, innerW, line2Fs, textCol, bold: true, center: true);
+    }
+
     private void DrawQr(SKCanvas canvas, string? token, SKRect dest)
     {
         if (string.IsNullOrWhiteSpace(token)) return;
