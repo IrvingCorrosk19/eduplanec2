@@ -21,6 +21,7 @@ using SchoolManager.Repositories.Interfaces;
 using SchoolManager.Services.Background;
 using SchoolManager.Infrastructure;
 using SchoolManager.Options;
+using SchoolManager.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -181,6 +182,7 @@ builder.Services.AddControllersWithViews()
     {
         options.Filters.Add<SchoolManager.Attributes.DateTimeConversionAttribute>();
         options.Filters.Add<SchoolManager.Filters.PlatformAccessGuardFilter>();
+        options.Filters.Add<SchoolManager.Filters.ClubParentsAdminAccessFilter>();
     });
 
 // Configurar Antiforgery para aceptar el token desde header (usado por fetch en Schedule y otros módulos AJAX)
@@ -319,6 +321,33 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(24);
         options.SlidingExpiration = true;
+        options.Events.OnRedirectToAccessDenied = async context =>
+        {
+            var role = context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (ClubParentsAdminAccessRules.IsRestrictedRole(role)
+                && !ClubParentsAdminAccessRules.IsSuperAdminRole(role))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                var actionContext = new Microsoft.AspNetCore.Mvc.ActionContext(
+                    context.HttpContext,
+                    context.HttpContext.GetRouteData() ?? new Microsoft.AspNetCore.Routing.RouteData(),
+                    new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor());
+
+                var viewResult = new Microsoft.AspNetCore.Mvc.ViewResult
+                {
+                    ViewName = "~/Views/Auth/AccessDenied.cshtml",
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+
+                await context.HttpContext.RequestServices
+                    .GetRequiredService<Microsoft.AspNetCore.Mvc.Infrastructure.IActionResultExecutor<Microsoft.AspNetCore.Mvc.ViewResult>>()
+                    .ExecuteAsync(actionContext, viewResult);
+                return;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+        };
     });
 
 // Agregar configuración de autorización

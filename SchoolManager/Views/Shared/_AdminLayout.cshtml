@@ -6,6 +6,7 @@
     var userSchool = await CurrentUserService.GetCurrentUserSchoolAsync();
     var currentUser = await CurrentUserService.GetCurrentUserAsync();
     var fullName = currentUser != null ? $"{currentUser.Name} {currentUser.LastName}" : userName;
+    var isClubParentsRestrictedMenu = userRole == "clubparentsadmin";
     
     // Traducir rol a español para mostrar según la base de datos
     var rolEnEspanol = userRole switch
@@ -49,9 +50,11 @@
                 <li class="nav-item">
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
                 </li>
+                @if (!isClubParentsRestrictedMenu) {
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="@Url.Action("Index", "Home")" class="nav-link">Inicio</a>
                 </li>
+                }
             </ul>
             <ul class="navbar-nav ml-auto">
                 <!-- Notificaciones de Mensajes -->
@@ -80,7 +83,7 @@
         <!-- Sidebar -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="/" class="brand-link">
+            <a href="@(isClubParentsRestrictedMenu ? Url.Action("Index", "User") : "/")" class="brand-link">
                 @if (userSchool != null && !string.IsNullOrEmpty(userSchool.LogoUrl))
                 {
                     @if (userSchool.LogoUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -106,6 +109,12 @@
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                        @if (isClubParentsRestrictedMenu)
+                        {
+                            @await Html.PartialAsync("_ClubParentsAdminSidebar")
+                        }
+                        else
+                        {
                         <li class="nav-item">
                             <a href="@Url.Action("Index", "Home")" class="nav-link">
                                 <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -625,6 +634,7 @@
                                 }
                             </ul>
                         </li>
+                        }
                         }
                     </ul>
                 </nav>

@@ -59,6 +59,11 @@ namespace SchoolManager.Controllers
                 return RedirectToAction("Index", "SuperAdmin");
             }
 
+            if (string.Equals(user.Role, "clubparentsadmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "User");
+            }
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);
@@ -79,6 +84,7 @@ namespace SchoolManager.Controllers
         [AllowAnonymous]
         public IActionResult AccessDenied(string returnUrl = null)
         {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
