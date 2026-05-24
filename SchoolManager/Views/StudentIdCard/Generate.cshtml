@@ -247,13 +247,48 @@
         gap: 6px;
     }
 
-    /* Franja gris inferior completa: sube si el nombre ocupa más de una línea (ajuste vía script) */
+    /* Franja gris inferior: ajuste mínimo vía script (máx. 8px, sin tapar datos) */
     .idcard-bottom-footer {
         transition: transform 0s;
     }
 
     .idcard-bottom-footer.idcard-bottom-footer--raised {
-        transform: translateY(calc(-1 * var(--idcard-footer-raise, 18px)));
+        transform: translateY(calc(-1 * var(--idcard-footer-raise, 0px)));
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-qr,
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-scan {
+        width: 52px;
+        min-width: 52px;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-qr img {
+        width: calc(52px * var(--idcard-qr-scale, 0.9));
+        height: calc(52px * var(--idcard-qr-scale, 0.9));
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-caption {
+        font-size: 4.2pt;
+        margin-top: 1px;
+        line-height: 1.08;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-scan {
+        height: 52px;
+        padding: 3px 2px;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-icon {
+        font-size: 9px;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-line1 {
+        font-size: 5pt;
+    }
+
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-line2,
+    .idcard-bottom-footer.idcard-bottom-footer--qr-compact .policy-emergency-line3 {
+        font-size: 4.5pt;
     }
 
     .idcard-policy-section .policy-text {
@@ -504,12 +539,12 @@
                                 <div class="idcard-student-name" style="font-size:9pt;font-weight:700;color:@text;line-height:1.15;max-width:100%">@Model.Card!.FullName</div>
                                 @if (Model.ShowDocumentId && !string.IsNullOrWhiteSpace(Model.DocumentId))
                                 {
-                                    <div style="font-size:6.5pt;color:@text">Cédula: @Model.DocumentId</div>
+                                    <div class="idcard-student-document" style="font-size:6.5pt;color:@text">Cédula: @Model.DocumentId</div>
                                 }
-                                <div style="font-size:6.5pt;color:@text;line-height:1.25">@gradeGroupCompact</div>
+                                <div class="idcard-student-grade" style="font-size:6.5pt;color:@text;line-height:1.25">@gradeGroupCompact</div>
                                 @if (Model.ShowAcademicYear && !string.IsNullOrWhiteSpace(Model.AcademicYear))
                                 {
-                                    <div style="font-size:6.5pt;color:@text">Año: @Model.AcademicYear</div>
+                                    <div class="idcard-student-year" style="font-size:6.5pt;color:@text">Año: @Model.AcademicYear</div>
                                 }
                             </div>
 
@@ -577,8 +612,63 @@
         var footerEl = root.querySelector('.idcard-bottom-footer');
         if (!nameEl || !footerEl) return;
 
-        footerEl.classList.remove('idcard-bottom-footer--raised');
-        footerEl.style.removeProperty('--idcard-footer-raise');
+        var MAX_LIFT = 8;
+        var MIN_LIFT = 5;
+        var ANCHOR_GAP = 2;
+
+        function resetFooterAdjust() {
+            footerEl.classList.remove('idcard-bottom-footer--raised', 'idcard-bottom-footer--qr-compact');
+            footerEl.style.removeProperty('--idcard-footer-raise');
+            footerEl.style.removeProperty('--idcard-qr-scale');
+        }
+
+        function getDataAnchor() {
+            var nodes = root.querySelectorAll(
+                '.idcard-student-year, .idcard-student-grade, .idcard-student-document, .idcard-student-name');
+            var anchor = null;
+            var maxBottom = -1;
+            nodes.forEach(function (el) {
+                var b = el.getBoundingClientRect().bottom;
+                if (b > maxBottom) {
+                    maxBottom = b;
+                    anchor = el;
+                }
+            });
+            return anchor;
+        }
+
+        function applyState(liftPx, qrCompact, qrScale) {
+            resetFooterAdjust();
+            if (liftPx > 0) {
+                footerEl.style.setProperty('--idcard-footer-raise', liftPx + 'px');
+                footerEl.classList.add('idcard-bottom-footer--raised');
+            }
+            if (qrCompact) {
+                footerEl.classList.add('idcard-bottom-footer--qr-compact');
+                footerEl.style.setProperty('--idcard-qr-scale', (qrScale || 0.9).toString());
+            }
+        }
+
+        function overlapsAnchor(liftPx) {
+            var anchor = getDataAnchor();
+            if (!anchor) return false;
+            applyState(liftPx, false, null);
+            var footerTop = footerEl.getBoundingClientRect().top;
+            var anchorBottom = anchor.getBoundingClientRect().bottom;
+            var overlap = footerTop < anchorBottom + ANCHOR_GAP;
+            resetFooterAdjust();
+            return overlap;
+        }
+
+        function isQrClipped() {
+            var cardRect = root.getBoundingClientRect();
+            var qrEl = footerEl.querySelector('.policy-emergency-qr, .policy-emergency-scan');
+            var target = qrEl || footerEl;
+            var r = target.getBoundingClientRect();
+            return r.bottom > cardRect.bottom - 0.5;
+        }
+
+        resetFooterAdjust();
 
         var style = window.getComputedStyle(nameEl);
         var lineHeight = parseFloat(style.lineHeight);
@@ -589,10 +679,24 @@
         var nameH = nameEl.getBoundingClientRect().height;
         if (nameH <= lineHeight * 1.25 + 0.5) return;
 
-        var extra = nameH - lineHeight;
-        var shift = Math.min(22, Math.max(15, Math.round(extra * 0.9)));
-        footerEl.style.setProperty('--idcard-footer-raise', shift + 'px');
-        footerEl.classList.add('idcard-bottom-footer--raised');
+        var safeLift = 0;
+        for (var lift = MAX_LIFT; lift >= MIN_LIFT; lift--) {
+            if (!overlapsAnchor(lift)) {
+                safeLift = lift;
+                break;
+            }
+        }
+
+        applyState(safeLift, false, null);
+        if (!isQrClipped()) return;
+
+        var scales = [0.9, 0.85, 0.8];
+        for (var s = 0; s < scales.length; s++) {
+            applyState(safeLift, true, scales[s]);
+            if (!isQrClipped()) return;
+        }
+
+        applyState(0, true, 0.8);
     };
 
     (function () {
