@@ -17,6 +17,7 @@
     }
     var hasLogo = !string.IsNullOrWhiteSpace(Model.SchoolLogoUrl);
     var showWm = Model.ShowWatermark && hasLogo;
+    var hasEmergencyQr = hasCard && Model.ShowQr && !string.IsNullOrEmpty(Model.Card?.EmergencyInfoQrImageDataUrl);
     // Frente: Cloudinary u otros CDN → URL directa (evita /File/GetSchoolLogo sin cookie en captura PDF); local → proxy autenticado
     string SchoolLogoImgSrc(string? url)
     {
@@ -295,6 +296,36 @@
         text-overflow: ellipsis;
     }
 
+    /* QR de emergencia (URL https → /StudentIdCard/public/emergency-info), antes en el reverso */
+    .idcard-policy-section .policy-emergency-qr {
+        flex-shrink: 0;
+        width: 58px;
+        min-width: 58px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .idcard-policy-section .policy-emergency-qr img {
+        width: 52px;
+        height: 52px;
+        display: block;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 4px;
+    }
+
+    .idcard-policy-section .policy-emergency-caption {
+        font-size: 4.5pt;
+        font-weight: 700;
+        color: @text;
+        line-height: 1.12;
+        margin-top: 2px;
+        max-width: 58px;
+    }
+
     .idcard-policy-section .policy-emergency-scan {
         flex-shrink: 0;
         width: 58px;
@@ -311,21 +342,18 @@
         padding: 4px 3px;
         box-sizing: border-box;
         line-height: 1.1;
-        gap: 0;
     }
 
     .idcard-policy-section .policy-emergency-icon {
         color: @primary;
         font-size: 11px;
         margin-bottom: 1px;
-        opacity: 0.95;
     }
 
     .idcard-policy-section .policy-emergency-line1 {
         font-size: 5.5pt;
         font-weight: 800;
         color: @primary;
-        letter-spacing: 0.02em;
     }
 
     .idcard-policy-section .policy-emergency-line2,
@@ -491,12 +519,22 @@
                                     }
                                     @* Se omite el ID visual en la vista previa (se mantiene en PDF y trazabilidad interna). *@
                                 </div>
-                                <div class="policy-emergency-scan" aria-label="Escanéame en caso de emergencia">
-                                    <i class="fas fa-qrcode policy-emergency-icon" aria-hidden="true"></i>
-                                    <span class="policy-emergency-line1">Escanéame</span>
-                                    <span class="policy-emergency-line2">en caso de</span>
-                                    <span class="policy-emergency-line3">emergencia</span>
-                                </div>
+                                @if (hasEmergencyQr)
+                                {
+                                    <div class="policy-emergency-qr" aria-label="Escanéame en caso de emergencia">
+                                        <img src="@Model.Card!.EmergencyInfoQrImageDataUrl" alt="QR datos de emergencia" />
+                                        <div class="policy-emergency-caption">Escanéame en caso de emergencia</div>
+                                    </div>
+                                }
+                                else if (Model.ShowQr)
+                                {
+                                    <div class="policy-emergency-scan" aria-label="Escanéame en caso de emergencia">
+                                        <i class="fas fa-qrcode policy-emergency-icon" aria-hidden="true"></i>
+                                        <span class="policy-emergency-line1">Escanéame</span>
+                                        <span class="policy-emergency-line2">en caso de</span>
+                                        <span class="policy-emergency-line3">emergencia</span>
+                                    </div>
+                                }
                             </div>
 
                             @* ZONA 6: Footer *@

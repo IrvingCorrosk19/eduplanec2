@@ -252,12 +252,17 @@ public class StudentIdCardImageService : IStudentIdCardImageService
         using (var p = Fill(new SKColor(230, 238, 247)))
             canvas.DrawRect(0, bottomZoneTop, w, bottomZH, p);
 
-        float promptSz = bottomZH * 0.55f;
-        float promptX  = w - hPad - promptSz;
-        float promptY  = bottomZoneTop + (bottomZH - promptSz) / 2f;
-        DrawEmergencyScanPrompt(canvas, SKRect.Create(promptX, promptY, promptSz, promptSz), primary, textCol);
+        float slotW = Math.Min(w * 0.30f, bottomZH * 0.58f);
+        float slotH = bottomZH * 0.90f;
+        float slotX = w - hPad - slotW;
+        float slotY = bottomZoneTop + (bottomZH - slotH) / 2f;
+        var emergencySlot = SKRect.Create(slotX, slotY, slotW, slotH);
+        if (settings.ShowQr && !string.IsNullOrWhiteSpace(dto.EmergencyInfoPageUrl))
+            DrawFrontEmergencyQrBlock(canvas, emergencySlot, dto.EmergencyInfoPageUrl, primary, textCol);
+        else
+            DrawEmergencyScanPrompt(canvas, emergencySlot, primary, textCol);
 
-        float leftW    = promptX - hPad * 2f;
+        float leftW    = slotX - hPad * 2f;
         float polFs    = h * 0.022f;
         float polIdFs  = h * 0.025f;
         float lty      = bottomZoneTop + bottomZH * 0.18f;
@@ -549,7 +554,22 @@ public class StudentIdCardImageService : IStudentIdCardImageService
     // ══════════════════════════════════════════════════════════════════════════
     // PRIMITIVOS
     // ══════════════════════════════════════════════════════════════════════════
-    /// <summary>Bloque visual donde iba el QR inferior del frente (texto de emergencia).</summary>
+    /// <summary>QR https del reverso (página pública de emergencia) en el frente + leyenda.</summary>
+    private static void DrawFrontEmergencyQrBlock(SKCanvas canvas, SKRect slot, string emergencyPageUrl, SKColor primary, SKColor textCol)
+    {
+        float qrSz = slot.Width * 0.82f;
+        float qrX = slot.Left + (slot.Width - qrSz) / 2f;
+        float qrY = slot.Top;
+        DrawPlainUrlQr(canvas, emergencyPageUrl, SKRect.Create(qrX, qrY, qrSz, qrSz));
+
+        float capFs = Math.Max(slot.Height * 0.10f, 7f);
+        float capY = qrY + qrSz + capFs * 0.25f;
+        AutoText(canvas, "Escanéame en caso", slot.Left, capY, slot.Width, capFs, textCol, bold: true, center: true);
+        capY += capFs * 1.08f;
+        AutoText(canvas, "de emergencia", slot.Left, capY, slot.Width, capFs, primary, bold: true, center: true);
+    }
+
+    /// <summary>Respaldo si no hay URL pública configurada (StudentIdCard__PublicBaseUrl).</summary>
     private static void DrawEmergencyScanPrompt(SKCanvas canvas, SKRect dest, SKColor primary, SKColor textCol)
     {
         using (var fill = Fill(new SKColor(255, 255, 255, 230)))
