@@ -1,3 +1,4 @@
+@using SchoolManager.Authorization
 @inject SchoolManager.Services.Interfaces.ICurrentUserService CurrentUserService
 @{
     Layout = null;
@@ -6,7 +7,9 @@
     var userSchool = await CurrentUserService.GetCurrentUserSchoolAsync();
     var currentUser = await CurrentUserService.GetCurrentUserAsync();
     var fullName = currentUser != null ? $"{currentUser.Name} {currentUser.LastName}" : userName;
-    var isClubParentsRestrictedMenu = userRole == "clubparentsadmin";
+    var portalMenuProfile = PortalRoleAccessRules.GetMenuProfile(userRole);
+    var isPortalRestrictedMenu = portalMenuProfile != PortalRoleAccessRules.PortalMenuProfile.Full;
+    var portalBrandUrl = isPortalRestrictedMenu ? PortalRoleAccessRules.GetDefaultLandingPath(userRole) : "/";
     
     // Traducir rol a español para mostrar según la base de datos
     var rolEnEspanol = userRole switch
@@ -50,7 +53,7 @@
                 <li class="nav-item">
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
                 </li>
-                @if (!isClubParentsRestrictedMenu) {
+                @if (!isPortalRestrictedMenu) {
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="@Url.Action("Index", "Home")" class="nav-link">Inicio</a>
                 </li>
@@ -83,7 +86,7 @@
         <!-- Sidebar -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="@(isClubParentsRestrictedMenu ? Url.Action("Index", "User") : "/")" class="brand-link">
+            <a href="@portalBrandUrl" class="brand-link">
                 @if (userSchool != null && !string.IsNullOrEmpty(userSchool.LogoUrl))
                 {
                     @if (userSchool.LogoUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -109,9 +112,13 @@
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        @if (isClubParentsRestrictedMenu)
+                        @if (portalMenuProfile == PortalRoleAccessRules.PortalMenuProfile.ClubParentsAndMessaging)
                         {
                             @await Html.PartialAsync("_ClubParentsAdminSidebar")
+                        }
+                        else if (portalMenuProfile == PortalRoleAccessRules.PortalMenuProfile.MessagingOnly)
+                        {
+                            @await Html.PartialAsync("_MessagingOnlySidebar")
                         }
                         else
                         {
@@ -152,15 +159,7 @@
                             </a>
                         </li> *@
                         }
-                        @if (userRole == "clubparentsadmin") {
-                        <li class="nav-item">
-                            <a href="/ClubParents/Students" class="nav-link">
-                                <i class="nav-icon fas fa-hand-holding-usd"></i>
-                                <p>Club de Padres</p>
-                            </a>
-                        </li>
-                        }
-                        <!-- Mensajería - Disponible para todos -->
+                        <!-- Mensajería - Disponible para todos (menú completo) -->
                         <li class="nav-item has-treeview">
                             <a href="#" class="nav-link">
                                 <i class="nav-icon fas fa-envelope"></i>
@@ -317,6 +316,12 @@
                         }
                         }
                         @if (userRole == "director") {
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index", "User")" class="nav-link">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>Administrar Usuarios</p>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a href="@Url.Action("Index", "Director")" class="nav-link">
                                 <i class="nav-icon fas fa-user-tie"></i>

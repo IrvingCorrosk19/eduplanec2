@@ -14,7 +14,7 @@
 | `Filters/ClubParentsAdminAccessFilter.cs` | **Creado** — filtro global MVC (HTTP 403, sin redirección) |
 | `Views/Shared/_ClubParentsAdminSidebar.cshtml` | **Creado** — menú lateral exclusivo (3 ítems) |
 | `Views/Shared/_AdminLayout.cshtml` | **Modificado** — menú condicional, navbar y marca |
-| `Controllers/UserController.cs` | **Modificado** — `[Authorize(Roles = "admin,clubparentsadmin")]` |
+| `Controllers/UserController.cs` | Sin cambio de rol — `[Authorize(Roles = "admin")]` únicamente |
 | `Controllers/AuthController.cs` | **Modificado** — login → `/User/Index`; `AccessDenied` con 403 |
 | `Program.cs` | **Modificado** — registro del filtro; evento cookie `OnRedirectToAccessDenied` |
 
@@ -27,10 +27,10 @@
 ### 2.1 Capa visual (`_AdminLayout.cshtml`)
 
 - Si `userRole == "clubparentsadmin"`:
-  - Se renderiza solo `_ClubParentsAdminSidebar.cshtml`.
+  - Se renderiza solo `_ClubParentsAdminSidebar.cshtml` (Mensajería + Club de Padres).
   - Se oculta el menú completo existente (envuelto en `else { ... }` — **código no eliminado**).
   - Navbar: sin enlace **Inicio** → Home.
-  - Logo/marca apunta a `/User/Index`.
+  - Logo/marca apunta a `/ClubParents/Students`.
   - Se mantiene icono de mensajes y **Cerrar sesión**.
 
 ### 2.2 Capa backend — filtro global
@@ -55,17 +55,17 @@ Evaluación por **controlador**, **acción** y **path**:
 
 - Path que empieza por `/ClubParents` → permitido.
 - Controlador `Messaging` → todas las acciones.
-- Controlador `User` → solo acciones usadas por `/User/Index` (ver sección 4).
+- Controlador `User` → **bloqueado** (solo `admin` vía `[Authorize]` del controlador).
 - Controlador `File` → `GetSchoolLogo` (logo en layout).
 - Controlador `Auth` → `Login`, `Logout`, `AccessDenied`.
 
 ### 2.5 Login
 
-Tras login exitoso, `clubparentsadmin` redirige a **`/User/Index`** (no a Home).
+Tras login exitoso, `clubparentsadmin` redirige a **`/ClubParents/Students`** (no a Home ni a User).
 
 ### 2.6 Acceso a `UserController`
 
-Se añade `clubparentsadmin` al atributo `[Authorize]` del controlador para que pueda usar la pantalla de usuarios. Las acciones no listadas en la whitelist siguen bloqueadas por el **filtro** (403).
+`/User/Index` y todo el controlador `User` permanecen con **`[Authorize(Roles = "admin")]`** únicamente. `clubparentsadmin` recibe 403 si intenta acceder por URL.
 
 ---
 
@@ -76,8 +76,9 @@ Todo lo que estaba en el sidebar estándar excepto:
 | Visible | Oculto (ejemplos) |
 |---------|-------------------|
 | Mensajería (Bandeja, Enviados, Nuevo) | Dashboard |
-| Administrar Usuarios (`/User/Index`) | Cambiar contraseña |
-| Club de Padres | Gestión contraseñas, Lotes de correo |
+| Club de Padres | Cambiar contraseña |
+| | Administrar Usuarios (`/User/Index`, solo `admin`) |
+| | Gestión contraseñas, Lotes de correo |
 | | Estudiantes, Portal docente, Director, Reportes |
 | | Administración (catálogos, asignaciones, horarios, etc.) |
 | | Secretaría, Contabilidad, Carnets, Pagos, Prematrícula |
@@ -91,7 +92,7 @@ Navbar: sin **Inicio**; sin accesos secundarios a otros módulos.
 | Área | Rutas / acciones |
 |------|------------------|
 | **Mensajería** | `/Messaging/*` (Inbox, Sent, Compose, Detail, APIs JSON, etc.) |
-| **Usuarios** | `/User/Index`, `GetUserJson`, `CreateJson`, `UpdateJson`, `Delete`, `DeleteConfirmed`, `UpdatePhoto`, `RemovePhoto`, `SendPasswordEmail` |
+| **Usuarios** | **No permitido** — `/User/*` solo rol `admin` |
 | **Club de Padres** | `/ClubParents/Students`, `/ClubParents/Api/*`, `/ClubParents/Carnet/*`, `/ClubParents/Platform/*` |
 | **Soporte** | `/Auth/Login`, `/Auth/Logout`, `/Auth/AccessDenied`, `/File/GetSchoolLogo` |
 | **Estáticos** | `wwwroot` (CSS, JS, imágenes) — vía `UseStaticFiles`, sin filtro MVC |
@@ -125,8 +126,8 @@ Cualquier otra ruta MVC para `clubparentsadmin` responde **HTTP 403** con vista 
 | Prueba | Resultado |
 |--------|-----------|
 | Compilación `dotnet build` | **OK** — 0 errores, 0 warnings |
-| Login `clubparentsadmin` | Redirige a `/User/Index` (código) |
-| Menú lateral | Solo 3 bloques (parcial dedicado) |
+| Login `clubparentsadmin` | Redirige a `/ClubParents/Students` (código) |
+| Menú lateral | Solo 2 bloques: Mensajería + Club de Padres |
 | Navegación Mensajería / ClubParents / User | Permitida por reglas |
 | URL manual `/Home/Index` | 403 vía filtro |
 | URL manual `/TeacherAssignment/Index` | 403 vía cookie o filtro según `[Authorize]` |
@@ -145,7 +146,7 @@ Cualquier otra ruta MVC para `clubparentsadmin` responde **HTTP 403** con vista 
 
 | Riesgo | Severidad | Mitigación |
 |--------|-----------|------------|
-| `clubparentsadmin` puede CRUD de usuarios vía APIs de `/User/Index` (misma superficie que admin en esa pantalla) | Media | Es requisito explícito; no se alteró lógica de negocio. Revisar si en el futuro se limitan roles creables desde UI. |
+| `clubparentsadmin` sin escuela asignada ve mensaje en Club de Padres | Baja | Asignar escuela desde un usuario `admin` en `/User/Index`. |
 | Peticiones AJAX bloqueadas devuelven HTML 403 en lugar de JSON | Baja | Solo afecta llamadas a rutas prohibidas; las de User/Messaging/ClubParents siguen en whitelist. |
 | `Home/Error` no está en whitelist | Baja | En error no controlado, comportamiento puede diferir; valorar añadir `Home/Error` si se observa en producción. |
 | Duplicidad filtro + evento cookie | Baja | Intencional: cubre fallos de rol (`[Authorize(Roles)]`) y acciones no listadas. |

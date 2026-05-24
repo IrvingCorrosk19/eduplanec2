@@ -59,9 +59,15 @@ namespace SchoolManager.Controllers
                 return RedirectToAction("Index", "SuperAdmin");
             }
 
-            if (string.Equals(user.Role, "clubparentsadmin", StringComparison.OrdinalIgnoreCase))
+            var roleLower = user.Role.ToLowerInvariant();
+            if (roleLower == "clubparentsadmin")
             {
-                return RedirectToAction("Index", "User");
+                return RedirectToAction("Students", "ClubParents");
+            }
+
+            if (roleLower is "teacher" or "docente" or "student" or "estudiante")
+            {
+                return RedirectToAction("Inbox", "Messaging");
             }
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))

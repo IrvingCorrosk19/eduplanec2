@@ -11,7 +11,7 @@ using SchoolManager.Dtos;
 using SchoolManager.Constants;
 using Microsoft.Extensions.Logging;
 
-[Authorize(Roles = "admin,clubparentsadmin")]
+[Authorize(Roles = "admin,director")]
 public class UserController : Controller
 {
     private readonly IUserService _userService;

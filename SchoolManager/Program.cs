@@ -182,7 +182,7 @@ builder.Services.AddControllersWithViews()
     {
         options.Filters.Add<SchoolManager.Attributes.DateTimeConversionAttribute>();
         options.Filters.Add<SchoolManager.Filters.PlatformAccessGuardFilter>();
-        options.Filters.Add<SchoolManager.Filters.ClubParentsAdminAccessFilter>();
+        options.Filters.Add<SchoolManager.Filters.PortalRoleAccessFilter>();
     });
 
 // Configurar Antiforgery para aceptar el token desde header (usado por fetch en Schedule y otros módulos AJAX)
@@ -324,8 +324,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Events.OnRedirectToAccessDenied = async context =>
         {
             var role = context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            if (ClubParentsAdminAccessRules.IsRestrictedRole(role)
-                && !ClubParentsAdminAccessRules.IsSuperAdminRole(role))
+            if (PortalRoleAccessRules.ShouldHandleAccessDeniedWithoutRedirect(role)
+                && !PortalRoleAccessRules.IsSuperAdminRole(role))
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
 

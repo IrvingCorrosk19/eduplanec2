@@ -6,11 +6,10 @@ using SchoolManager.Authorization;
 namespace SchoolManager.Filters;
 
 /// <summary>
-/// Restringe al rol <c>clubparentsadmin</c> a Mensajería, User/Index (y APIs que usa) y ClubParents.
-/// Devuelve HTTP 403 con la vista AccessDenied, sin redirección.
-/// SuperAdmin y rutas /SuperAdmin no se evalúan.
+/// Restringe rutas según perfil de menú (mensajería solo, club de padres, etc.).
+/// Mensajería permitida para todos; /User solo admin y director.
 /// </summary>
-public class ClubParentsAdminAccessFilter : IAsyncActionFilter
+public class PortalRoleAccessFilter : IAsyncActionFilter
 {
     public Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
@@ -22,17 +21,14 @@ public class ClubParentsAdminAccessFilter : IAsyncActionFilter
 
         var role = user.FindFirst(ClaimTypes.Role)?.Value;
 
-        if (ClubParentsAdminAccessRules.IsSuperAdminRole(role)
-            || ClubParentsAdminAccessRules.IsSuperAdminPath(httpContext.Request.Path))
-            return next();
-
-        if (!ClubParentsAdminAccessRules.IsRestrictedRole(role))
+        if (PortalRoleAccessRules.IsSuperAdminRole(role)
+            || PortalRoleAccessRules.IsSuperAdminPath(httpContext.Request.Path))
             return next();
 
         var controller = context.RouteData.Values["controller"]?.ToString();
         var action = context.RouteData.Values["action"]?.ToString();
 
-        if (ClubParentsAdminAccessRules.IsAllowed(controller, action, httpContext.Request.Path))
+        if (PortalRoleAccessRules.IsAllowed(role, controller, action, httpContext.Request.Path))
             return next();
 
         context.Result = new ViewResult

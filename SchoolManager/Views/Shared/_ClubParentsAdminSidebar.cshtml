@@ -1,40 +1,5 @@
-@* Menú exclusivo para clubparentsadmin: Mensajería, Usuarios, Club de Padres *@
-<li class="nav-item has-treeview">
-    <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-envelope"></i>
-        <p>
-            Mensajería
-            <i class="right fas fa-angle-left"></i>
-            <span class="badge badge-warning right unread-badge" style="display: none;">0</span>
-        </p>
-    </a>
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="@Url.Action("Inbox", "Messaging")" class="nav-link">
-                <i class="far fa-circle nav-icon"></i>
-                <p>Bandeja de Entrada</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="@Url.Action("Sent", "Messaging")" class="nav-link">
-                <i class="far fa-circle nav-icon"></i>
-                <p>Enviados</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="@Url.Action("Compose", "Messaging")" class="nav-link">
-                <i class="far fa-circle nav-icon"></i>
-                <p>Nuevo Mensaje</p>
-            </a>
-        </li>
-    </ul>
-</li>
-<li class="nav-item">
-    <a href="@Url.Action("Index", "User")" class="nav-link">
-        <i class="nav-icon fas fa-users"></i>
-        <p>Administrar Usuarios</p>
-    </a>
-</li>
+@* Club de Padres: Mensajería + módulo ClubParents (/User solo admin y director) *@
+@await Html.PartialAsync("_MessagingSidebar")
 <li class="nav-item">
     <a href="/ClubParents/Students" class="nav-link">
         <i class="nav-icon fas fa-hand-holding-usd"></i>
