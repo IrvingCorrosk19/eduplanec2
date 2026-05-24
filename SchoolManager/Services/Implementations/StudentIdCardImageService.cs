@@ -559,11 +559,12 @@ public class StudentIdCardImageService : IStudentIdCardImageService
     {
         float qrSz = slot.Width * 0.82f;
         float qrX = slot.Left + (slot.Width - qrSz) / 2f;
-        float qrY = slot.Top;
+        float qrLift = Math.Clamp(slot.Height * 0.07f, 5f, 8f);
+        float qrY = slot.Top - qrLift;
         DrawPlainUrlQr(canvas, emergencyPageUrl, SKRect.Create(qrX, qrY, qrSz, qrSz));
 
         float capFs = Math.Max(slot.Height * 0.10f, 7f);
-        float capY = qrY + qrSz + capFs * 0.25f;
+        float capY = slot.Top + qrSz + capFs * 0.25f;
         AutoText(canvas, "Escanéame en caso", slot.Left, capY, slot.Width, capFs, textCol, bold: true, center: true);
         capY += capFs * 1.08f;
         AutoText(canvas, "de emergencia", slot.Left, capY, slot.Width, capFs, primary, bold: true, center: true);
