@@ -297,7 +297,8 @@
     }
 
     /* QR de emergencia (URL https → /StudentIdCard/public/emergency-info), antes en el reverso */
-    .idcard-policy-section .policy-emergency-qr {
+    .idcard-policy-section .policy-emergency-qr,
+    .idcard-policy-section .policy-emergency-scan.idcard-bottom-qr {
         flex-shrink: 0;
         width: 58px;
         min-width: 58px;
@@ -306,6 +307,15 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+    }
+
+    /* Solo el QR inferior: sube si el nombre ocupa más de una línea (ajuste vía script) */
+    .idcard-bottom-qr {
+        transition: transform 0s;
+    }
+
+    .idcard-bottom-qr.idcard-bottom-qr--raised {
+        transform: translateY(calc(-1 * var(--idcard-qr-raise, 18px)));
     }
 
     .idcard-policy-section .policy-emergency-qr img {
@@ -491,7 +501,7 @@
 
                             @* ZONA 3: Datos centrados — jerarquía tipográfica clara *@
                             <div class="idcard-data-center idcard-z1">
-                                <div style="font-size:9pt;font-weight:700;color:@text;line-height:1.15">@Model.Card!.FullName</div>
+                                <div class="idcard-student-name" style="font-size:9pt;font-weight:700;color:@text;line-height:1.15;max-width:100%">@Model.Card!.FullName</div>
                                 @if (Model.ShowDocumentId && !string.IsNullOrWhiteSpace(Model.DocumentId))
                                 {
                                     <div style="font-size:6.5pt;color:@text">Cédula: @Model.DocumentId</div>
@@ -521,14 +531,14 @@
                                 </div>
                                 @if (hasEmergencyQr)
                                 {
-                                    <div class="policy-emergency-qr" aria-label="Escanéame en caso de emergencia">
+                                    <div class="policy-emergency-qr idcard-bottom-qr" aria-label="Escanéame en caso de emergencia">
                                         <img src="@Model.Card!.EmergencyInfoQrImageDataUrl" alt="QR datos de emergencia" />
                                         <div class="policy-emergency-caption">Escanéame en caso de emergencia</div>
                                     </div>
                                 }
                                 else if (Model.ShowQr)
                                 {
-                                    <div class="policy-emergency-scan" aria-label="Escanéame en caso de emergencia">
+                                    <div class="policy-emergency-scan idcard-bottom-qr" aria-label="Escanéame en caso de emergencia">
                                         <i class="fas fa-qrcode policy-emergency-icon" aria-hidden="true"></i>
                                         <span class="policy-emergency-line1">Escanéame</span>
                                         <span class="policy-emergency-line2">en caso de</span>
@@ -559,6 +569,48 @@
     }
 </div>
 
+<script>
+    window.adjustIdCardQrForLongName = function (root) {
+        root = root || document.getElementById('idCardFront');
+        if (!root) return;
+        var nameEl = root.querySelector('.idcard-student-name');
+        var qrEl = root.querySelector('.idcard-bottom-qr');
+        if (!nameEl || !qrEl) return;
+
+        qrEl.classList.remove('idcard-bottom-qr--raised');
+        qrEl.style.removeProperty('--idcard-qr-raise');
+
+        var style = window.getComputedStyle(nameEl);
+        var lineHeight = parseFloat(style.lineHeight);
+        if (!lineHeight || Number.isNaN(lineHeight)) {
+            lineHeight = parseFloat(style.fontSize) * 1.15;
+        }
+
+        var nameH = nameEl.getBoundingClientRect().height;
+        if (nameH <= lineHeight * 1.25 + 0.5) return;
+
+        var extra = nameH - lineHeight;
+        var shift = Math.min(22, Math.max(15, Math.round(extra * 0.9)));
+        qrEl.style.setProperty('--idcard-qr-raise', shift + 'px');
+        qrEl.classList.add('idcard-bottom-qr--raised');
+    };
+
+    (function () {
+        function runQrAdjust() {
+            if (typeof window.adjustIdCardQrForLongName === 'function') {
+                window.adjustIdCardQrForLongName();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runQrAdjust);
+        } else {
+            runQrAdjust();
+        }
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(runQrAdjust);
+        }
+    })();
+</script>
 <script>
     (function () {
         var btn = document.getElementById('btnDownloadPdf');

@@ -175,6 +175,10 @@ public class StudentIdCardHtmlCaptureService : IStudentIdCardHtmlCaptureService
         });
         await ApplyContentScale(page);
         await page.WaitForSelectorAsync(".idcard-face", new WaitForSelectorOptions { Timeout = 60000 });
+        await page.EvaluateFunctionAsync(@"() => {
+            if (typeof window.adjustIdCardQrForLongName === 'function')
+                window.adjustIdCardQrForLongName();
+        }");
         await Task.Delay(400);
 
         var front = await page.QuerySelectorAsync("#idCardFront")
