@@ -4,7 +4,7 @@ namespace SchoolManager.Authorization;
 
 /// <summary>
 /// Reglas de navegación y acceso por rol en el portal (_AdminLayout).
-/// Mensajería: todos excepto admin escolar (solo /User). /User: admin y director.
+/// /User: admin y director. Perfiles restringidos: mensajería y club de padres.
 /// </summary>
 public static class PortalRoleAccessRules
 {
@@ -71,8 +71,9 @@ public static class PortalRoleAccessRules
     {
         if (string.IsNullOrWhiteSpace(role)) return PortalMenuProfile.Full;
         var r = role.Trim();
+        // Admin vuelve a menú completo (como comportamiento original del portal).
         if (string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase))
-            return PortalMenuProfile.UserManagementOnly;
+            return PortalMenuProfile.Full;
         if (string.Equals(r, "clubparentsadmin", StringComparison.OrdinalIgnoreCase))
             return PortalMenuProfile.ClubParentsAndMessaging;
         if (MessagingOnlyRoles.Contains(r))

@@ -67,7 +67,7 @@ namespace SchoolManager.Controllers
 
             if (roleLower == "admin")
             {
-                return RedirectToAction("Index", "User");
+                return RedirectToAction("Index", "Home");
             }
 
             if (roleLower is "teacher" or "docente" or "student" or "estudiante")
