@@ -22,6 +22,10 @@
         (string.Equals(currentController, "StudentIdCard", StringComparison.OrdinalIgnoreCase)
          && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase))
         || path.StartsWith("/StudentIdCard/ui", StringComparison.OrdinalIgnoreCase);
+    var isInstitutionalCredentialUi =
+        (string.Equals(currentController, "InstitutionalCredential", StringComparison.OrdinalIgnoreCase)
+         && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase))
+        || path.StartsWith("/InstitutionalCredential/ui", StringComparison.OrdinalIgnoreCase);
 }
     <div class="wrapper">
         <!-- Navbar -->
@@ -90,17 +94,30 @@
                                 <p>Estudiantes</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/StaffDirectory" class="nav-link @(currentAction == "StaffDirectory" ? "active" : "")">
+                                <i class="nav-icon fas fa-users-cog"></i>
+                                <p>Directorio de personal</p>
+                            </a>
+                        </li>
+                        <li class="nav-header">CREDENCIALES</li>
+                        <li class="nav-item">
+                            <a href="/StudentIdCard/ui" class="nav-link @(isStudentIdCardUi ? "active" : "")">
+                                <i class="nav-icon fas fa-id-card"></i>
+                                <p>Carnet Estudiantil</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/InstitutionalCredential/ui" class="nav-link @(isInstitutionalCredentialUi ? "active" : "")">
+                                <i class="nav-icon fas fa-id-badge"></i>
+                                <p>Credencial institucional</p>
+                            </a>
+                        </li>
                         <li class="nav-header">CONFIGURACIÓN</li>
                         <li class="nav-item">
                             <a href="/SuperAdmin/EmailApiSettings" class="nav-link @(currentAction == "EmailApiSettings" ? "active" : "")">
                                 <i class="nav-icon fas fa-paper-plane"></i>
                                 <p>Correo API (Resend)</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/StudentIdCard/ui" class="nav-link @(isStudentIdCardUi ? "active" : "")">
-                                <i class="nav-icon fas fa-id-card"></i>
-                                <p>Carnet Estudiantil</p>
                             </a>
                         </li>
                         <li class="nav-item">

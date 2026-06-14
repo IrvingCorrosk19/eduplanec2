@@ -276,6 +276,12 @@ builder.Services.AddScoped<IStudentIdCardService, StudentIdCardService>();
 builder.Services.AddScoped<IStudentIdCardImageService, StudentIdCardImageService>();
 builder.Services.AddScoped<IStudentIdCardPdfService, StudentIdCardPdfService>();
 builder.Services.AddScoped<IStudentIdCardHtmlCaptureService, StudentIdCardHtmlCaptureService>();
+builder.Services.Configure<SchoolManager.Options.InstitutionalCredentialOptions>(
+    builder.Configuration.GetSection(SchoolManager.Options.InstitutionalCredentialOptions.SectionName));
+builder.Services.AddScoped<IInstitutionalCredentialImageService, InstitutionalCredentialImageService>();
+builder.Services.AddScoped<IInstitutionalCredentialPdfService, InstitutionalCredentialPdfService>();
+builder.Services.AddScoped<IInstitutionalCredentialHtmlCaptureService, InstitutionalCredentialHtmlCaptureService>();
+builder.Services.AddScoped<IInstitutionalCredentialService, InstitutionalCredentialService>();
 builder.Services.AddScoped<ITeacherWorkPlanService, TeacherWorkPlanService>();
 builder.Services.AddScoped<ITeacherWorkPlanPdfService, TeacherWorkPlanPdfService>();
 builder.Services.AddScoped<IDirectorWorkPlanService, DirectorWorkPlanService>();
