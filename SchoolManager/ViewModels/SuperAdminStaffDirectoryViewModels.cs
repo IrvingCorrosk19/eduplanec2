@@ -5,6 +5,7 @@ namespace SchoolManager.ViewModels;
 public class SuperAdminStaffDirectoryFilterVm
 {
     public string? Search { get; set; }
+    public string? DocumentId { get; set; }
     public Guid? SchoolId { get; set; }
 
     /// <summary>Filtro por rol exacto en BD (opcional).</summary>
@@ -55,6 +56,8 @@ public class SuperAdminStaffDirectoryPageVm
         };
         if (!string.IsNullOrWhiteSpace(Filter.Search))
             d["Search"] = Filter.Search;
+        if (!string.IsNullOrWhiteSpace(Filter.DocumentId))
+            d["DocumentId"] = Filter.DocumentId;
         if (Filter.SchoolId.HasValue)
             d["SchoolId"] = Filter.SchoolId.Value.ToString("D");
         if (!string.IsNullOrWhiteSpace(Filter.Role))

@@ -5,6 +5,7 @@ namespace SchoolManager.ViewModels;
 public class SuperAdminStudentDirectoryFilterVm
 {
     public string? Search { get; set; }
+    public string? DocumentId { get; set; }
     public Guid? SchoolId { get; set; }
     public Guid? GradeId { get; set; }
     public Guid? GroupId { get; set; }
@@ -66,6 +67,8 @@ public class SuperAdminStudentDirectoryPageVm
         };
         if (!string.IsNullOrWhiteSpace(Filter.Search))
             d["Search"] = Filter.Search;
+        if (!string.IsNullOrWhiteSpace(Filter.DocumentId))
+            d["DocumentId"] = Filter.DocumentId;
         if (Filter.SchoolId.HasValue)
             d["SchoolId"] = Filter.SchoolId.Value.ToString("D");
         if (Filter.GradeId.HasValue)

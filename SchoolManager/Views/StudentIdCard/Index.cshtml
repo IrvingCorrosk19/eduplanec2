@@ -122,6 +122,11 @@
             <div class="idcard-bulk-panel">
                 <div class="row g-2 mb-3 idcard-bulk-filters">
                     <div class="col-md-3">
+                        <label for="filterDocumentId" class="form-label mb-1">Cédula</label>
+                        <input type="text" id="filterDocumentId" class="form-control form-control-sm"
+                               placeholder="Ej. 8-123-4567" autocomplete="off" />
+                    </div>
+                    <div class="col-md-3">
                         <label for="filterGrade" class="form-label mb-1">Grado</label>
                         <select id="filterGrade" class="form-select form-select-sm">
                             <option value="">Todos</option>
@@ -219,6 +224,7 @@ $(function(){
                 d.group = $('#filterGroup').val();
                 d.shift = $('#filterShift').val();
                 d.printed = $('#filterPrinted').val();
+                d.documentId = ($('#filterDocumentId').val() || '').trim();
             },
             dataSrc: 'data',
             xhrFields: { withCredentials: true },
@@ -327,7 +333,8 @@ $(function(){
             grade: $('#filterGrade').val() || '',
             group: $('#filterGroup').val() || '',
             shift: $('#filterShift').val() || '',
-            printed: $('#filterPrinted').val() || ''
+            printed: $('#filterPrinted').val() || '',
+            documentId: ($('#filterDocumentId').val() || '').trim()
         };
     }
 
@@ -368,6 +375,14 @@ $(function(){
 
     $('#filterGrade, #filterGroup, #filterShift, #filterPrinted').on('change', function() {
         table.ajax.reload();
+    });
+
+    let documentIdDebounce;
+    $('#filterDocumentId').on('input', function() {
+        clearTimeout(documentIdDebounce);
+        documentIdDebounce = setTimeout(function() {
+            table.ajax.reload();
+        }, 350);
     });
 
     $('#selectAllStudents').on('change', function() {

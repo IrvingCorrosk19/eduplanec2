@@ -1072,14 +1072,10 @@ public class SuperAdminService : ISuperAdminService
             saQuery = saQuery.Where(sa => sa.Student.Status != "active" || sa.Student.Status == null);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var p = "%" + filter.Search.Trim() + "%";
-            saQuery = saQuery.Where(sa =>
-                EF.Functions.ILike(sa.Student.Name, p) ||
-                EF.Functions.ILike(sa.Student.LastName, p) ||
-                (sa.Student.Email != null && EF.Functions.ILike(sa.Student.Email, p)) ||
-                (sa.Student.DocumentId != null && EF.Functions.ILike(sa.Student.DocumentId, p)));
-        }
+            saQuery = DocumentIdSearchHelper.WhereAssignmentStudentSearchMatches(saQuery, filter.Search);
+
+        if (!string.IsNullOrWhiteSpace(filter.DocumentId))
+            saQuery = DocumentIdSearchHelper.WhereStudentDocumentIdMatches(saQuery, filter.DocumentId);
 
         return saQuery.Select(sa => new SuperAdminStudentDirectoryRowVm
         {
@@ -1114,14 +1110,10 @@ public class SuperAdminService : ISuperAdminService
             q = q.Where(u => u.Status != "active" || u.Status == null);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var p = "%" + filter.Search.Trim() + "%";
-            q = q.Where(u =>
-                EF.Functions.ILike(u.Name, p) ||
-                EF.Functions.ILike(u.LastName, p) ||
-                (u.Email != null && EF.Functions.ILike(u.Email, p)) ||
-                (u.DocumentId != null && EF.Functions.ILike(u.DocumentId, p)));
-        }
+            q = DocumentIdSearchHelper.WhereUserSearchMatches(q, filter.Search);
+
+        if (!string.IsNullOrWhiteSpace(filter.DocumentId))
+            q = DocumentIdSearchHelper.WhereDocumentIdMatches(q, filter.DocumentId);
 
         return q.Select(u => new SuperAdminStudentDirectoryRowVm
         {
@@ -1173,14 +1165,10 @@ public class SuperAdminService : ISuperAdminService
             baseQuery = baseQuery.Where(u => u.Status != "active" || u.Status == null);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var p = "%" + filter.Search.Trim() + "%";
-            baseQuery = baseQuery.Where(u =>
-                EF.Functions.ILike(u.Name, p) ||
-                EF.Functions.ILike(u.LastName, p) ||
-                (u.Email != null && EF.Functions.ILike(u.Email, p)) ||
-                (u.DocumentId != null && EF.Functions.ILike(u.DocumentId, p)));
-        }
+            baseQuery = DocumentIdSearchHelper.WhereUserSearchMatches(baseQuery, filter.Search);
+
+        if (!string.IsNullOrWhiteSpace(filter.DocumentId))
+            baseQuery = DocumentIdSearchHelper.WhereDocumentIdMatches(baseQuery, filter.DocumentId);
 
         page.SchoolOptions = await _context.Schools.IgnoreQueryFilters()
             .OrderBy(s => s.Name)
