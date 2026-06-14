@@ -510,6 +510,7 @@ public class StudentIdCardController : Controller
             {
                 id = u.Id,
                 fullName = $"{u.Name} {u.LastName}",
+                documentId = u.DocumentId,
                 photoUrl = u.PhotoUrl,
                 grade = u.StudentAssignments
                     .Where(sa => sa.IsActive)
@@ -535,6 +536,7 @@ public class StudentIdCardController : Controller
             {
                 x.id,
                 fullName = DisplayNameHelper.FormatFullName(x.fullName),
+                documentId = x.documentId ?? "",
                 x.photoUrl,
                 x.grade,
                 x.group,

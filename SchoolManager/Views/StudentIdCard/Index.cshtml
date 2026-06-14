@@ -186,6 +186,7 @@
                                 <th><input type="checkbox" id="selectAllStudents" title="Seleccionar página" /></th>
                                 <th class="text-center" title="Foto de perfil">Foto</th>
                                 <th>Estudiante</th>
+                                <th>Cédula</th>
                                 <th>Grado</th>
                                 <th>Grupo</th>
                                 <th>Jornada</th>
@@ -260,6 +261,13 @@ $(function(){
                 title: 'Estudiante',
                 render: function (data) {
                     return window.PersonNameDisplay ? PersonNameDisplay.format(data || '') : (data || '');
+                }
+            },
+            {
+                data: 'documentId',
+                title: 'Cédula',
+                render: function(data) {
+                    return data ? $('<div>').text(data).html() : '—';
                 }
             },
             { data: 'grade', title: 'Grado' },
