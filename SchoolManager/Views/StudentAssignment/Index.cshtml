@@ -365,6 +365,7 @@
                 orderClasses: false,
                 dom: 'rtip', // Oculta el buscador nativo
             });
+            assignmentTable = table;
 
             // Conectar búsqueda personalizada
             $('#customSearch').on('keyup', function () {
@@ -373,6 +374,96 @@
         });
 
         let currentStudentId = null;
+        let assignmentTable = null;
+
+        function htmlEncode(value) {
+            return $('<div/>').text(value || '').html();
+        }
+
+        function shiftBadgeClass(shiftName) {
+            const token = (shiftName || '').toLowerCase();
+            if (token.includes('mañana')) return 'bg-info text-white';
+            if (token.includes('tarde')) return 'bg-warning text-dark';
+            if (token.includes('noche')) return 'bg-dark text-white';
+            return 'bg-secondary text-white';
+        }
+
+        function renderEnrollmentCards(assignments, includeActions) {
+            if (!assignments || !assignments.length) {
+                return '<em class="text-muted">Sin asignaciones</em>';
+            }
+
+            return assignments.map(function (item) {
+                const assignmentId = item.studentAssignmentId || item.StudentAssignmentId;
+                const gradeName = item.gradeName || item.GradeName || item.grado || '(Sin grado)';
+                const groupName = item.groupName || item.GroupName || item.grupo || '(Sin grupo)';
+                const shiftName = item.shiftName || item.ShiftName || 'Sin jornada';
+                const activeSubjectsCount = item.activeSubjectsCount || item.ActiveSubjectsCount || 0;
+                const subjectBadge = activeSubjectsCount > 0
+                    ? `<span class="badge bg-warning text-dark ms-2">${activeSubjectsCount} materia${activeSubjectsCount === 1 ? '' : 's'}</span>`
+                    : '';
+                const actionButton = includeActions
+                    ? `<button type="button" class="btn btn-outline-danger btn-sm btn-remove-enrollment"
+                            data-student-assignment-id="${assignmentId}"
+                            data-active-subjects-count="${activeSubjectsCount}"
+                            title="Quitar este grupo">
+                            <i class="bi bi-trash me-1"></i> Quitar
+                       </button>`
+                    : '';
+
+                return `
+                    <div class="mb-2 p-2 bg-light rounded">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <i class="bi bi-mortarboard-fill text-primary"></i>
+                                <span class="fw-bold text-primary">${htmlEncode(gradeName)} - ${htmlEncode(groupName)}</span>
+                                ${subjectBadge}
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge ${shiftBadgeClass(shiftName)} px-3 py-2 fw-bold">
+                                    <i class="bi bi-clock-fill me-1"></i>${htmlEncode(shiftName || 'Sin jornada')}
+                                </span>
+                                ${actionButton}
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function refreshGradeGroupCell(studentId) {
+            const row = $(`tr[data-student-id="${studentId}"]`);
+            const cell = row.find('.grade-group-cell');
+            cell.html('<div class="text-muted small">Actualizando...</div>');
+
+            $.get(`/StudentAssignment/GetGradeGroupByStudent/${studentId}`)
+                .done(function (res) {
+                    const data = (res.success && res.data) ? res.data : [];
+                    cell.html(renderEnrollmentCards(data, false));
+                    if (assignmentTable) {
+                        assignmentTable.row(row).invalidate('dom').draw(false);
+                    }
+                })
+                .fail(function () {
+                    cell.html('<div class="text-danger small">Error al actualizar grupos.</div>');
+                });
+        }
+
+        function loadCurrentEnrollmentsIntoModal() {
+            const infoContainer = $('#gradeGroupInfo .current-assignment');
+            infoContainer.html(`<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>`);
+
+            $.get(`/StudentAssignment/GetGradeGroupByStudent/${currentStudentId}`)
+                .done(function (res) {
+                    if (res.success && res.data && res.data.length) {
+                        infoContainer.html(renderEnrollmentCards(res.data, true));
+                    } else {
+                        infoContainer.html(`<em class="text-muted">Sin asignaciones</em>`);
+                    }
+                })
+                .fail(function () {
+                    infoContainer.html(`<div class="text-danger">Error al cargar las asignaciones</div>`);
+                });
+        }
 
         // Manejo del Modal
         $('#gradeGroupModal').on('show.bs.modal', function (event) {
@@ -382,55 +473,11 @@
             const studentName = button.data('student-name');
 
             $('#modalStudentName').text(studentName);
-            const infoContainer = $('#gradeGroupInfo .current-assignment');
             const dropdown = $('#gradeGroupSelect');
 
             // Limpiar y mostrar carga
-            infoContainer.html(`<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>`);
             dropdown.empty().append(`<option value="">-- Seleccione Grado/Grupo --</option>`);
-
-            // Cargar asignación actual
-            $.get(`/StudentAssignment/GetGradeGroupByStudent/${currentStudentId}`)
-                .done(function (res) {
-                    if (res.success && res.data && res.data.length) {
-                        const actual = res.data.map(x => {
-                            var grupoRaw = x.grupo || '';
-                            var jornada = "";
-                            var grupo = grupoRaw;
-                            if (grupoRaw.includes("(") && grupoRaw.includes(")")) {
-                                var match = grupoRaw.match(/\(([^)]+)\)/);
-                                if (match && match[1]) {
-                                    jornada = match[1];
-                                    grupo = grupoRaw.replace(/\([^)]+\)/, "").trim();
-                                }
-                            }
-                            
-                            // Determinar color del badge según jornada
-                            var badgeClass = "bg-secondary text-white";
-                            if (jornada.toLowerCase().includes("mañana")) badgeClass = "bg-info text-white";
-                            else if (jornada.toLowerCase().includes("tarde")) badgeClass = "bg-warning text-dark";
-                            else if (jornada.toLowerCase().includes("noche")) badgeClass = "bg-dark text-white";
-                            
-                            return `
-                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2 p-2 bg-light rounded">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi bi-mortarboard-fill text-primary"></i>
-                                        <span class="fw-bold text-primary">${x.grado} - ${grupo}</span>
-                                    </div>
-                                    <span class="badge ${badgeClass} px-3 py-2 fw-bold">
-                                        <i class="bi bi-clock-fill me-1"></i>${jornada || "Sin jornada"}
-                                    </span>
-                                </div>
-                            `;
-                        }).join('');
-                        infoContainer.html(actual);
-                    } else {
-                        infoContainer.html(`<em class="text-muted">Sin asignaciones</em>`);
-                    }
-                })
-                .fail(function () {
-                    infoContainer.html(`<div class="text-danger">Error al cargar las asignaciones</div>`);
-                });
+            loadCurrentEnrollmentsIntoModal();
 
             // Cargar opciones disponibles
             $.get(`/StudentAssignment/GetAvailableGradeGroups`)
@@ -454,6 +501,73 @@
             $('#gradeGroupInfo .current-assignment').empty();
             cleanupSweetAlert();
             resetBodyIfNoOpenModal();
+        });
+
+        function postRemoveEnrollment(studentAssignmentId) {
+            $.post('/StudentAssignment/RemoveEnrollment', {
+                studentAssignmentId: studentAssignmentId,
+                removeActiveSubjects: false
+            })
+                .done(function (resp) {
+                    if (resp.success) {
+                        loadCurrentEnrollmentsIntoModal();
+                        refreshGradeGroupCell(currentStudentId);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: resp.message || 'Grupo inactivado correctamente.',
+                            timer: 1600,
+                            showConfirmButton: false,
+                            didClose: () => forceCleanup()
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: resp.message || 'No se pudo quitar el grupo.',
+                        didClose: () => forceCleanup()
+                    });
+                })
+                .fail(function (xhr) {
+                    var msg = xhr.status === 403
+                        ? 'No tiene permisos para quitar grupos.'
+                        : 'No se pudo quitar el grupo.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: msg,
+                        didClose: () => forceCleanup()
+                    });
+                });
+        }
+
+        $(document).on('click', '.btn-remove-enrollment', function () {
+            const studentAssignmentId = $(this).data('student-assignment-id');
+            if (!studentAssignmentId) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo identificar la matrícula.' });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'warning',
+                title: '¿Quitar este grupo?',
+                text: 'Se inactivará solo este grupo/matrícula. No se borrará historial.',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, quitar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    postRemoveEnrollment(studentAssignmentId);
+                } else {
+                    cleanupSweetAlert();
+                }
+            });
         });
 
         // Guardar cambios

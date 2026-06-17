@@ -114,7 +114,8 @@ namespace SchoolManager.Services.Implementations
                     ShiftId = sa.ShiftId,
                     IsActive = sa.IsActive,
                     EndDate = sa.EndDate,
-                    CreatedAt = sa.CreatedAt
+                    CreatedAt = sa.CreatedAt,
+                    AcademicYearId = sa.AcademicYearId
                 })
                 .OrderByDescending(sa => sa.CreatedAt) // Más recientes primero
                 .AsNoTracking()
@@ -147,7 +148,8 @@ namespace SchoolManager.Services.Implementations
                     ShiftId = sa.ShiftId,
                     IsActive = sa.IsActive,
                     EndDate = sa.EndDate,
-                    CreatedAt = sa.CreatedAt
+                    CreatedAt = sa.CreatedAt,
+                    AcademicYearId = sa.AcademicYearId
                 }).ToListAsync();
 
             return rows
