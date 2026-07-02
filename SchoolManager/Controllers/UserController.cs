@@ -18,6 +18,7 @@ public class UserController : Controller
     private readonly IUserPhotoService _userPhotoService;
     private readonly ISubjectService _subjectService;
     private readonly IGroupService _groupService;
+    private readonly IGradeLevelService _gradeLevelService;
     private readonly IMapper _mapper;
     private readonly IEmailConfigurationService _emailConfigurationService;
     private readonly ICurrentUserService _currentUserService;
@@ -28,6 +29,7 @@ public class UserController : Controller
         IUserPhotoService userPhotoService,
         ISubjectService subjectService,
         IGroupService groupService,
+        IGradeLevelService gradeLevelService,
         IMapper mapper,
         IEmailConfigurationService emailConfigurationService,
         ICurrentUserService currentUserService,
@@ -37,6 +39,7 @@ public class UserController : Controller
         _userPhotoService = userPhotoService;
         _subjectService = subjectService;
         _groupService = groupService;
+        _gradeLevelService = gradeLevelService;
         _mapper = mapper;
         _emailConfigurationService = emailConfigurationService;
         _currentUserService = currentUserService;
@@ -139,6 +142,9 @@ public class UserController : Controller
       .Where(r => r != UserRole.Superadmin && r != UserRole.Admin && r != UserRole.Student)
       .Select(r => r.ToString())
       .ToList();
+
+        ViewBag.Grades = (await _gradeLevelService.GetAllAsync()).OrderBy(g => g.Name).ToList();
+        ViewBag.Groups = (await _groupService.GetAllAsync()).OrderBy(g => g.Name).ToList();
 
         var users = await _userService.GetAllForIndexAsync();
         

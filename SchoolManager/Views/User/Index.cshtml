@@ -587,7 +587,7 @@
     </div>
 
     <div class="table-container">
-            <div class="search-bar d-flex gap-3 align-items-center">
+            <div class="search-bar d-flex gap-3 align-items-center flex-wrap">
                 <!-- Filtro de Roles -->
                 <div class="role-filter">
                     <select id="roleFilter" class="form-select" style="min-width: 180px;">
@@ -600,6 +600,26 @@
                         <option value="ClubParentsAdmin">Administrador Club de Padres</option>
                         <option value="QlServices">QL Services</option>
                         <option value="Inspector">Inspector</option>
+                    </select>
+                </div>
+                <div class="role-filter">
+                    <select id="gradeFilter" class="form-select" style="min-width: 150px;" title="Filtrar por grado">
+                        <option value="">Todos los grados</option>
+                        @foreach (var grade in (IEnumerable<SchoolManager.Models.GradeLevel>)(ViewBag.Grades ?? Array.Empty<SchoolManager.Models.GradeLevel>()))
+                        {
+                            <option value="@grade.Name">@grade.Name</option>
+                        }
+                        <option value="Sin asignar">Sin asignar</option>
+                    </select>
+                </div>
+                <div class="role-filter">
+                    <select id="groupFilter" class="form-select" style="min-width: 150px;" title="Filtrar por grupo">
+                        <option value="">Todos los grupos</option>
+                        @foreach (var group in (IEnumerable<SchoolManager.Models.Group>)(ViewBag.Groups ?? Array.Empty<SchoolManager.Models.Group>()))
+                        {
+                            <option value="@group.Name">@group.Name</option>
+                        }
+                        <option value="Sin asignar">Sin asignar</option>
                     </select>
                 </div>
                 <!-- Campo de búsqueda -->
@@ -751,6 +771,37 @@
         $(document).ready(function () {
             function userAdminPhotoHref(stored) {
                 return '/File/GetUserPhoto?photoUrl=' + encodeURIComponent(stored || '');
+            }
+
+            function escapeRegex(text) {
+                return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            function getColumnIndexByHeader(headerText, fallback) {
+                var $headers = $('#users-table thead th');
+                var idx = $headers.index($headers.filter(function() { return $(this).text().trim() === headerText; }).first());
+                return idx < 0 ? fallback : idx;
+            }
+
+            function applyExactColumnFilter(table, columnIndex, value) {
+                if (!value) {
+                    table.column(columnIndex).search('').draw();
+                    return;
+                }
+                table.column(columnIndex).search('^\\s*' + escapeRegex(value) + '\\s*$', true, false).draw();
+            }
+
+            function bindGradeGroupFilters(table) {
+                var gradeColumnIndex = getColumnIndexByHeader('Grado', 8);
+                var groupColumnIndex = getColumnIndexByHeader('Grupo', 9);
+
+                $('#gradeFilter').on('change', function() {
+                    applyExactColumnFilter(table, gradeColumnIndex, $(this).val());
+                });
+
+                $('#groupFilter').on('change', function() {
+                    applyExactColumnFilter(table, groupColumnIndex, $(this).val());
+                });
             }
 
             // Funcionalidad para mostrar/ocultar especializaciones según el rol
@@ -1090,6 +1141,8 @@
                                         usersTable.column(roleColumnIndex).search('\\s*' + selectedRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', true, false).draw();
                                     }
                                 });
+
+                                bindGradeGroupFilters(usersTable);
                             } else {
                                 console.warn('⚠️ DataTables no se pudo inicializar, usando búsqueda simple');
                                 setupSimpleSearch();
@@ -1120,20 +1173,31 @@
                 $('#roleFilter').on('change', function () {
                     filterTable();
                 });
+
+                $('#gradeFilter, #groupFilter').on('change', function () {
+                    filterTable();
+                });
                 
                 function filterTable() {
                     var searchText = $('#searchInput').val().toLowerCase();
                     var selectedRole = $('#roleFilter').val();
+                    var selectedGrade = $('#gradeFilter').val();
+                    var selectedGroup = $('#groupFilter').val();
                     var $headers = $('#users-table thead th');
-                    var roleColIdx = $headers.index($headers.filter(function() { return $(this).text().trim() === 'Rol'; }).first());
-                    if (roleColIdx < 0) roleColIdx = 7;
+                    var roleColIdx = getColumnIndexByHeader('Rol', 7);
+                    var gradeColIdx = getColumnIndexByHeader('Grado', 8);
+                    var groupColIdx = getColumnIndexByHeader('Grupo', 9);
                     
                     $('#users-table tbody tr').each(function() {
                         var rowText = $(this).text().toLowerCase();
                         var roleCell = $(this).find('td:eq(' + roleColIdx + ')').text().trim();
+                        var gradeCell = $(this).find('td:eq(' + gradeColIdx + ')').text().trim();
+                        var groupCell = $(this).find('td:eq(' + groupColIdx + ')').text().trim();
                         
                         var matchesSearch = searchText === '' || rowText.indexOf(searchText) !== -1;
                         var matchesRole = true;
+                        var matchesGrade = !selectedGrade || gradeCell === selectedGrade;
+                        var matchesGroup = !selectedGroup || groupCell === selectedGroup;
                         
                         if (selectedRole !== '') {
                             if (selectedRole === 'Director') {
@@ -1155,7 +1219,7 @@
                             }
                         }
                         
-                        if (matchesSearch && matchesRole) {
+                        if (matchesSearch && matchesRole && matchesGrade && matchesGroup) {
                             $(this).show();
                         } else {
                             $(this).hide();
