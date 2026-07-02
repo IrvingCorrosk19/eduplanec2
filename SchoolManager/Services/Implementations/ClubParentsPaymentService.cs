@@ -122,7 +122,8 @@ public class ClubParentsPaymentService : IClubParentsPaymentService
                 Grade = x.u.StudentAssignments.Where(sa => sa.IsActive).Select(sa => sa.Grade.Name).FirstOrDefault() ?? "Sin asignar",
                 Group = x.u.StudentAssignments.Where(sa => sa.IsActive).Select(sa => sa.Group.Name).FirstOrDefault() ?? "Sin asignar",
                 CarnetStatus = x.spa == null ? CarnetPendiente : x.spa.CarnetStatus,
-                PlatformAccessStatus = x.spa == null ? PlatformPendiente : x.spa.PlatformAccessStatus
+                PlatformAccessStatus = x.spa == null ? PlatformPendiente : x.spa.PlatformAccessStatus,
+                HasPhoto = x.u.PhotoUrl != null && x.u.PhotoUrl != ""
             })
             .OrderBy(x => x.FullName)
             .ToListAsync();

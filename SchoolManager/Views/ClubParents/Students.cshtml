@@ -72,6 +72,7 @@
                         <table id="studentsTable" class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
+                                    <th class="text-center">Foto</th>
                                     <th>Nombre</th>
                                     <th>Cédula</th>
                                     <th>Grado</th>
@@ -97,6 +98,8 @@
     .badge-carnet-entregado { background-color: #198754; color: #fff; }
     .badge-platform-pendiente { background-color: #6c757d; color: #fff; }
     .badge-platform-activo { background-color: #198754; color: #fff; }
+    .badge-photo-si { background-color: #198754; color: #fff; }
+    .badge-photo-no { background-color: #6c757d; color: #fff; }
 </style>
 
 @section Scripts {
@@ -167,12 +170,12 @@
                 var tbody = document.querySelector('#studentsTable tbody');
                 tbody.innerHTML = '';
                 if (result.noSchool) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-warning"><i class="fas fa-exclamation-triangle me-1"></i>' + (result.message || 'Su usuario no tiene una escuela asignada. Asigne la escuela en el módulo Usuarios para ver los estudiantes.') + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-warning"><i class="fas fa-exclamation-triangle me-1"></i>' + (result.message || 'Su usuario no tiene una escuela asignada. Asigne la escuela en el módulo Usuarios para ver los estudiantes.') + '</td></tr>';
                     return;
                 }
                 var list = result.data || [];
                 if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay estudiantes en su escuela con los filtros seleccionados.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay estudiantes en su escuela con los filtros seleccionados.</td></tr>';
                     return;
                 }
                 list.forEach(function(row) {
@@ -186,7 +189,11 @@
                     if ((row.platformAccessStatus || '').toLowerCase() === 'pendiente') {
                         actions.push('<button type="button" class="btn btn-success btn-sm btn-activate-platform" data-id="' + row.id + '" title="Activar plataforma"><i class="fas fa-unlock"></i> Activar plataforma</button>');
                     }
+                    var photoBadge = row.hasPhoto
+                        ? '<span class="badge badge-photo-si"><i class="fas fa-check-circle me-1"></i>Sí</span>'
+                        : '<span class="badge badge-photo-no"><i class="fas fa-times-circle me-1"></i>No</span>';
                     tr.innerHTML =
+                        '<td class="text-center">' + photoBadge + '</td>' +
                         '<td class="js-person-name">' + (window.PersonNameDisplay ? PersonNameDisplay.format(row.fullName || '') : (row.fullName || '')) + '</td>' +
                         '<td>' + (row.documentId ? row.documentId : '—') + '</td>' +
                         '<td>' + (row.grade || '') + '</td>' +
@@ -199,7 +206,7 @@
             })
             .catch(function(e) {
                 console.error('Students', e);
-                document.querySelector('#studentsTable tbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar la lista.</td></tr>';
+                document.querySelector('#studentsTable tbody').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error al cargar la lista.</td></tr>';
             });
     }
 

@@ -13,6 +13,7 @@ public class ClubParentsStudentDto
     public string Group { get; set; } = "";
     public string CarnetStatus { get; set; } = "Pendiente";
     public string PlatformAccessStatus { get; set; } = "Pendiente";
+    public bool HasPhoto { get; set; }
 }
 
 /// <summary>Estado de pago/acceso de un estudiante.</summary>
