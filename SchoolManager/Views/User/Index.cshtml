@@ -619,6 +619,8 @@
                             <th>Celular Principal</th>
                             <th>Celular Secundario</th>
                             <th>Rol</th>
+                            <th>Grado</th>
+                            <th>Grupo</th>
                             <th>Estado</th>
                             <th class="specialization-column">Disciplina</th>
                             <th class="specialization-column">Orientación</th>
@@ -643,6 +645,8 @@
                                     @GetRoleDisplayName(user.Role)
                                 </span>
                             </td>
+                            <td>@GetStudentGrade(user)</td>
+                            <td>@GetStudentGroup(user)</td>
                             <td>
                                     @if (user.Status?.ToLowerInvariant() == "active")
                                     {
@@ -971,8 +975,8 @@
                         "ordering": true,
                         "order": [[0, 'asc']],
                         "columnDefs": [
-                            { "orderable": true, "targets": [0,1,2,3,4,5,6,7,8,9,10,11,12] },
-                            { "orderable": false, "targets": [13] } // Columna de Acciones (índice 13)
+                            { "orderable": true, "targets": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] },
+                            { "orderable": false, "targets": [15] } // Columna de Acciones
                         ],
                         "scrollX": true,
                         "scrollCollapse": true,
@@ -1869,5 +1873,25 @@
             "inspector" => "Inspector",
             _ => role ?? "Sin rol"
         };
+    }
+
+    private static bool IsStudentRole(string? role)
+    {
+        var normalized = role?.ToLower();
+        return normalized == "student" || normalized == "estudiante";
+    }
+
+    private static string GetStudentGrade(SchoolManager.Models.User user)
+    {
+        if (!IsStudentRole(user.Role)) return "N/A";
+        var assignment = user.StudentAssignments?.FirstOrDefault(sa => sa.IsActive);
+        return assignment?.Grade?.Name ?? "Sin asignar";
+    }
+
+    private static string GetStudentGroup(SchoolManager.Models.User user)
+    {
+        if (!IsStudentRole(user.Role)) return "N/A";
+        var assignment = user.StudentAssignments?.FirstOrDefault(sa => sa.IsActive);
+        return assignment?.Group?.Name ?? "Sin asignar";
     }
 }

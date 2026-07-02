@@ -140,7 +140,7 @@ public class UserController : Controller
       .Select(r => r.ToString())
       .ToList();
 
-        var users = await _userService.GetAllAsync();
+        var users = await _userService.GetAllForIndexAsync();
         
         // Filtrar por rol si se especifica
         if (!string.IsNullOrEmpty(role))

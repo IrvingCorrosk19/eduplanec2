@@ -5,6 +5,7 @@ public interface IUserService
     Task<User?> GetByEmailAsync(string email);
 
     Task<List<User>> GetAllAsync();
+    Task<List<User>> GetAllForIndexAsync();
     Task<User?> GetByIdAsync(Guid id);
     Task<User?> GetByIdWithRelationsAsync(Guid id);
     Task CreateAsync(User user, List<Guid> subjectIds, List<Guid> groupIds, List<Guid> gradeLevelIds);

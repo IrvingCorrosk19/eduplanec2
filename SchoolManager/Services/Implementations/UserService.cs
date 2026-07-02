@@ -246,6 +246,21 @@ public class UserService : IUserService
                 .ToListAsync();
         }
 
+        public async Task<List<User>> GetAllForIndexAsync()
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync();
+            if (currentUser == null || currentUser.SchoolId == null)
+                return new List<User>();
+
+            return await _context.Users
+                .Where(u => u.SchoolId == currentUser.SchoolId)
+                .Include(u => u.StudentAssignments.Where(sa => sa.IsActive))
+                    .ThenInclude(sa => sa.Grade)
+                .Include(u => u.StudentAssignments.Where(sa => sa.IsActive))
+                    .ThenInclude(sa => sa.Group)
+                .ToListAsync();
+        }
+
     public async Task<List<User>> GetAllWithAssignmentsByRoleAsync(string role)
     {
             var currentUser = await _currentUserService.GetCurrentUserAsync();
